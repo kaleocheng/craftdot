@@ -1,0 +1,48 @@
+digraph {
+    {% for c, cattr  in clusters['datacenters'].items() %}
+    subgraph cluster_{{ loop.index }} {
+        label="{{ c }}";
+        {% for service, sattr in cattr['services'].items() %}
+        {{ service.replace('-', '_') }} [
+            shape="plaintext";
+            label=<
+                <table border='0' cellborder='1' cellspacing='0'>
+                    <tr><td>{{ service }}</td></tr>
+                    <tr>
+                        <td cellpadding='4'>
+                        <table border='0' cellspacing='0'>
+                            {% for domain in sattr['domains'] %}
+                            <tr><td>{{ domain }}</td></tr>
+                            {% endfor %}
+                        </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td cellpadding='4'>
+                        <table border='0' cellspacing='0'>
+                        {% for host in sattr['hosts'] %}
+                            <tr><td>{{ host }}</td></tr>
+                        {% endfor %}
+                        </table>
+                        </td>
+                    </tr>
+                    <tr>
+                    <td cellpadding='4'>
+                    <table border='0' cellspacing='0'>
+                        {% for port in sattr['ports'] %}
+                        <tr><td>{{ port }}</td></tr>
+                        {% endfor %}
+                    </table>
+                    </td>
+                </tr>
+                </table>
+            >
+            ];
+            {% endfor %}
+    }
+
+    {% endfor %}
+    {% for flow in clusters['flows'] %}
+    {{ flow.replace('-', '_').replace('_>', '->') }};
+    {% endfor %}
+}

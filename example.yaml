@@ -1,0 +1,24 @@
+datacenters:
+  dc-1:
+    services:
+      service-1:
+        domains:
+          - 1.example.com
+        ports:
+          - 8000
+        hosts:
+          - host-1 172.0.0.1
+          - host-2 172.0.0.2
+  dc-2:
+    services:
+      service-2:
+        domains:
+          - 2.example.com
+        ports:
+          - 8000
+        hosts:
+          - host-3 172.0.0.3
+          - host-4 172.0.0.4
+
+flows:
+  - service-1 -> service-2
