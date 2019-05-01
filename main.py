@@ -20,6 +20,8 @@ def parse_yaml(content):
 
 
 template = Template(read_file('template.j2'))
+#print(parse_yaml(read_file('example.yaml')))
+#exit(0)
 result = template.render(clusters=parse_yaml(read_file('example.yaml')))
 
 print(result)
