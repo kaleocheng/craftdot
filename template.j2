@@ -1,4 +1,5 @@
 digraph {
+    node [shape="box"];
     {% for itemkey, itemvaule  in clusters.items() if itemkey != 'type' and itemkey != 'flows'  recursive %}
     {% if 'type' in itemvaule and itemvaule['type'] == 'group' %}
         subgraph cluster_{{loop.depth}}_{{ loop.index }} {
