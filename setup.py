@@ -11,6 +11,7 @@ setuptools.setup(
     author_email="kaleocheng@gmail.com",
     description="easily to make pretty graphviz diagram",
     long_description=long_description,
+    package_data={'craftdot': ['*.j2']},
     long_description_content_type="text/markdown",
     url="https://github.com/kaleocheng/craftdot",
     install_requires=['Click==7.0', 'Jinja2==2.10.1', 'PyYAML==5.1'],
