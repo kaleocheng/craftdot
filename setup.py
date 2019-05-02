@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="craftdot",
-    version="0.0.2",
+    version="0.0.4",
     author="Kaleo Cheng",
     entry_points={"console_scripts": ['craftdot = craftdot.cli:main']},
     author_email="kaleocheng@gmail.com",

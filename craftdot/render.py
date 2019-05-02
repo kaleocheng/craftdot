@@ -22,5 +22,6 @@ def _get_template(filepath):
 
 
 def from_file(source):
-    template = _get_template('template.j2')
+    templatefile = os.path.join(os.path.dirname(__file__), 'template.j2')
+    template = _get_template(templatefile)
     return template.render(clusters=_parse_yaml(_read_file(source)))
