@@ -1,0 +1,45 @@
+group gce {
+    registry
+    builder
+    group gce-us {
+       docker-hub
+       service4 {
+           alias [
+               gce-service
+           ]
+       }
+
+       group gce-hk {
+           service-5
+       }
+    }
+}
+
+service3 {
+    note [
+        this-is-a-note
+    ]
+}
+
+group aws {
+    servier1 {
+        domains [
+            "https://service1.example.com"
+        ]
+    }
+    service2 {
+        domains [
+            "https://service2.example.com"
+            "https://service2-1.example.com"
+        ]
+        ports [
+            "Nginx TCP/443-444"
+        ]
+    }
+}
+
+
+service1 -> registry
+service2 -> registry
+service1 -> service2
+registry -> builder
