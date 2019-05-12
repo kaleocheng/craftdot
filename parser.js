@@ -1,9 +1,9 @@
 const Parser = require('jison').Parser
 
-String.prototype.replaceAll = function (search, replacement) {
+String.prototype.replaceAll = function(search, replacement) {
     return this.split(search).join(replacement)
 }
-String.prototype.matchRule = function (rule) {
+String.prototype.matchRule = function(rule) {
     return new RegExp('^' + rule.split('*').join('.*') + '$').test(this)
 }
 
@@ -11,26 +11,21 @@ const grammar = {
     'lex': {
         'rules': [
             ['group', "return 'GROUP'"],
-            ['craft_style', "return 'STYLE'"],
-            ['in', "return 'IN'"],
-            ['out', "return 'OUT'"],
-            ['flow', "return 'FLOW'"],
-            ['^[A-Za-z][A-Za-z0-9-\\*]*', "return 'NAME'"],
+            ['^[A-Za-z\\*][A-Za-z0-9-\\*]*', "return 'NAME'"],
             [',', "return 'COMMA'"],
             ['\\{', "return 'OP'"],
             ['\\}', "return 'CP'"],
             ['\\[', "return 'OB'"],
             ['\\]', "return 'CB'"],
-            ['->', "return 'ARROW'"],
+            ['-', "return 'STROKE'"],
+            ['>', "return 'LARROW'"],
             [':', "return 'COLON'"],
             ['([":A-Za-z0-9-].*)', "return 'ITEM'"],
             ['[\\n\\s\\t\\r]+', '/**/']
         ]
     },
     'bnf': {
-        'craftdot': ['exps'],
-        'exps': ['exps exp', 'exp'],
-        'exp': ['node', 'flow', 'style', 'flowstyle'],
+        'craftdot': ['nodes'],
         'nodes': [
             ['nodes node', '{$$=yy.appendOrNewArray($$, $2)}'],
             ['node', '{$$=yy.appendOrNewArray($$, $1)}']
@@ -38,45 +33,38 @@ const grammar = {
         'node': [
             ['GROUP NAME OP nodes CP', '{$$=yy.newGroup($2, $4); yy.addGroup($$)}'],
             ['NAME', '{$$=yy.newCraft($1); yy.addCraft($$)}'],
-            ['NAME OP attrs CP', '{$$=yy.newCraft($1, $3);  yy.addCraft($$) }']
+            ['NAME OP attrs CP', '{$$=yy.newCraft($1, $3);  yy.addCraft($$) }'],
+            ['NAME OB styleAttrs CB OP attrs CP', '{$$=yy.newCraft($1, $6, $3); yy.addCraft($$)}'],
+            'flow'
         ],
         'attrs': [
             ['attrs attr', '{$$=yy.appendOrNewArray($$, $2)}'],
             ['attr', '{$$=yy.appendOrNewArray($$, $1)}']
         ],
         'attr': [
-            ['NAME OB items CB', '{$$=yy.newAttr($1, $3)}']
+            ['NAME COLON items', '{$$=yy.newAttr($1, $3)}'],
+            ['NAME COLON item', '{$$=yy.newAttr($$, $3)}']
         ],
         'items': [
-            ['items item', '{$$=yy.appendOrNewArray($$, $2)}'],
-            ['item', '{$$=yy.appendOrNewArray($$, $1)}']
+            ['items STROKE item', '{$$=yy.appendOrNewArray($$, $3)}'],
+            ['STROKE item', '{$$=yy.appendOrNewArray($$, $2)}']
         ],
         'item': [
-            ['ITEM', '{$$=yy.newItem($$)}'],
+            'ITEM',
             'NAME'
         ],
         'flow': [
-            ['NAME ARROW NAME', '{$$=yy.newFlow($1, $3); yy.addFlow($$)}']
+            ['NAME STROKE LARROW NAME', '{$$=yy.newFlow($1, $4); yy.addFlow($$)}'],
+            ['NAME STROKE LARROW NAME OB styleAttrs CB', '{$$=yy.newFlow($1, $4, $6); yy.addFlow($$)}']
         ],
-        'style': [
-            ['STYLE selectors OP sattrs CP', '{yy.addStyle($2, $4)}']
+        'styleAttrs': [
+            ['styleAttrs styleAttr', '{$$=yy.appendOrNewArray($$, $2)}'],
+            ['styleAttrs COMMA styleAttr', '{$$=yy.appendOrNewArray($$, $3)}'],
+            ['styleAttr', '{$$=yy.appendOrNewArray($$, $1)}']
         ],
-        'selectors': [
-            ['selectors COMMA NAME', '{$$=yy.appendOrNewArray($$, $3)}'],
-            ['NAME', '{$$=yy.appendOrNewArray($$, $1)}']
-        ],
-        'sattrs': [
-            ['sattrs sattr', '{$$=yy.appendOrNewArray($$, $2)}'],
-            ['sattr', '{$$=yy.appendOrNewArray($$, $1)}']
-        ],
-        'sattr': [
+        'styleAttr': [
             ['NAME COLON NAME', '{$$=yy.newSAttr($1, $3)}']
         ],
-        'flowstyle': [
-            ['FLOW selectors IN OP sattrs CP', '{yy.addFLowStyle($2, $5, "in")}'],
-            ['FLOW selectors OUT OP sattrs CP', '{yy.addFLowStyle($2, $5, "out")}'],
-            ['FLOW selectors OP sattrs CP', '{yy.addFLowStyle($2, $4)}']
-        ]
     }
 }
 
@@ -93,7 +81,13 @@ const yy = {
         return nodes
     },
     newGroup: (name, childs) => {
-        const g = { name: name, type: 'group', crafts: [], subgroups: [], parent: '' }
+        const g = {
+            name: name,
+            type: 'group',
+            crafts: [],
+            subgroups: [],
+            parent: ''
+        }
         for (child of childs) {
             switch (child.type) {
                 case 'group':
@@ -106,21 +100,43 @@ const yy = {
         }
         return g
     },
-    newCraft: (name, attrs) => {
-        const c = { type: 'craft', name: name }
+    newCraft: (name, attrs, styleAttrs) => {
+        const c = {
+            type: 'craft',
+            name: name
+        }
+        if (name.includes('*')) {
+            c['wildcard'] = true
+        }
         if (attrs) {
             c['attrs'] = attrs
+        }
+        if (styleAttrs) {
+            c['styleAttrs'] = styleAttrs
         }
         return c
     },
     newAttr: (name, items) => {
-        return { name: name, items: items }
+        return {
+            name: name,
+            items: items
+        }
     },
     newItem: (item) => {
         return item.replace(/(^")|("$)/g, "")
     },
-    newFlow: (from, to) => {
-        return { from: from, to: to }
+    newFlow: (from, to, styleAttrs) => {
+        const flow = {
+            from: from,
+            to: to
+        }
+        if (from.includes('*') || to.includes('*')) {
+            flow['wildcard'] = true
+        }
+        if (styleAttrs) {
+            flow['styleAttrs'] = styleAttrs
+        }
+        return flow
     },
     newSAttr: (key, vaule) => {
         return `${key}=${vaule};`
@@ -137,42 +153,6 @@ const yy = {
     },
     addFlow: (flow) => {
         yy.flows.push(flow)
-    },
-    addStyle: (nodes, styles) => {
-
-        for (node of nodes) {
-            if (node.includes('*')) {
-                for (craft of Object.keys(yy.crafts)) {
-                    if (craft.matchRule(node)) {
-                        yy.crafts[craft]['styles'] = styles
-                    }
-                }
-
-            } else if (node in crafts) {
-                crafts[node]['styles'] = styles
-            }
-        }
-
-    },
-    addFLowStyle: (nodes, styles, option) => {
-        for (node of nodes) {
-            for (f of yy.flows) {
-                if (option == 'in') {
-
-                    if (f.to.matchRule(node)) {
-                        f['styles'] = styles
-                    }
-                } else if (option == 'out') {
-                    if (f.from.matchRule(node)) {
-                        f['styles'] = styles
-                    }
-                } else {
-                    if (f.from.matchRule(node) || f.to.matchRule(node)) {
-                        f['styles'] = styles
-                    }
-                }
-            }
-        }
     }
 }
 

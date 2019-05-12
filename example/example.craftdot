@@ -4,9 +4,11 @@ group gce {
     group gce-us {
        docker-hub
        service4 {
-           alias [
-               gce-service
-           ]
+           alias: gce-service
+           domains: "https://service4.example.com
+           envs:
+            - env1
+            - env2
        }
 
        group gce-hk {
@@ -16,35 +18,29 @@ group gce {
 }
 
 service3 {
-    note [
-        this-is-a-note
-    ]
+    note: this-is-a-note
 }
 
 group aws {
-    service1 {
-        domains [
-            "https://service1.example.com"
-        ]
+    service1[color: red, bgcolor: blue] {
+        domains: "https://service1.example.com"
+
     }
-    service2 {
-        domains [
-            "https://service2.example.com"
-            "https://service2-1.example.com"
-        ]
-        ports [
-            "Nginx TCP/443-444"
-        ]
+    service2 [color: red,bg: blue
+
+bgcolor: blue] {
+        domains:
+            - "https://service2.example.com"
+            - "https://service2-1.example.com"
+
+        ports: "Nginx TCP/443-444"
+
     }
 }
 
-
-
-craft_style service* {
-    fillcolor: gray
-    style: filled
+service* [color: red] {
+    ports: "tcp/3001"
 }
-
 
 service1 -> registry
 service2 -> registry
@@ -54,7 +50,6 @@ service4 -> service1
 registry -> builder
 sevice2 -> service4
 service4 -> service-5
+* -> service* [color: red]
+* -> db* [color: red]
 
-flow builder {
-    color: red
-}
