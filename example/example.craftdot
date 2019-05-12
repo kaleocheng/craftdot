@@ -22,7 +22,7 @@ service3 {
 }
 
 group aws {
-    servier1 {
+    service1 {
         domains [
             "https://service1.example.com"
         ]
@@ -39,7 +39,22 @@ group aws {
 }
 
 
+
+craft_style service* {
+    fillcolor: gray
+    style: filled
+}
+
+
 service1 -> registry
 service2 -> registry
 service1 -> service2
+service-5 -> service1
+service4 -> service1
 registry -> builder
+sevice2 -> service4
+service4 -> service-5
+
+flow builder {
+    color: red
+}
