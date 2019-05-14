@@ -35,6 +35,7 @@ const grammar = {
             ['NAME', '{$$=yy.newCraft($1); yy.addCraft($$)}'],
             ['NAME OP attrs CP', '{$$=yy.newCraft($1, $3);  yy.addCraft($$) }'],
             ['NAME OB styleAttrs CB OP attrs CP', '{$$=yy.newCraft($1, $6, $3); yy.addCraft($$)}'],
+            ['NAME OB styleAttrs CB', '{$$=yy.newCraft($1, "", $3); yy.addCraft($$)}'],
             'flow'
         ],
         'attrs': [
@@ -71,6 +72,8 @@ const grammar = {
 const parser = new Parser(grammar)
 const yy = {
     crafts: {},
+    parsedCrafts: [],
+    parsedFlows: [],
     groups: {},
     flows: [],
     appendOrNewArray: (nodes, node) => {
@@ -95,6 +98,7 @@ const yy = {
                     break
                 case 'craft':
                     g.crafts.push(child.name)
+                    yy.crafts[child.name]['group'] = name
                     break
             }
         }
@@ -153,13 +157,77 @@ const yy = {
     },
     addFlow: (flow) => {
         yy.flows.push(flow)
+    },
+    parseWildcard: () => {
+        const wildcardCrafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => 'wildcard' in c && c.wildcard == true)
+        const wildcardFlows = yy.flows.filter(f => 'wildcard' in f && f.wildcard == true)
+        let crafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => !('wildcard' in c))
+        let flows = yy.flows.filter(f => !('wildcard' in f))
+        for (let wc of wildcardCrafts.reverse()) {
+            crafts = crafts.map(c => {
+                if (c.name.matchRule(wc.name)) {
+                    if ('attrs' in c && 'attrs' in wc) {
+                        let cnames = c.attrs.map(x => x.name)
+                        let defaultAttrs = wc.attrs.filter(x => !cnames.includes(x.name))
+                        c.attrs.push(...defaultAttrs)
+                    }
+                    let {
+                        name,
+                        wildcard,
+                        ...wccopy
+                    } = wc
+                    return {
+                        ...c,
+                        ...{
+                            ...wccopy,
+                            ...c
+                        }
+                    }
+                }
+                return c
+            })
+        }
+        for (wf of wildcardFlows) {
+            flows = flows.map(f => {
+                if (f.from.matchRule(wf.from) && f.to.matchRule(wf.to)) {
+                    let {
+                        from,
+                        to,
+                        wildcard,
+                        ...wfcopy
+                    } = wf
+                    return {
+                        ...f,
+                        ...{
+                            ...wfcopy,
+                            ...f
+                        }
+                    }
+                }
+                return f
+            })
+        }
+        yy.parsedCrafts = crafts
+        yy.parsedFlows = flows
     }
+
 }
 
 parser.yy = yy
 
-const parse = (craftdot) => {
+const parse = (craftdot, craftFilter) => {
     parser.parse(craftdot)
+    parser.yy.parseWildcard()
+    const filteredCrafts = []
+    for (let flow of parser.yy.parsedFlows) {
+        if (flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter)) {
+            filteredCrafts.push(flow.from)
+            filteredCrafts.push(flow.to)
+        }
+    }
+    parser.yy.parsedCrafts = parser.yy.parsedCrafts.filter(craft => craft.name.matchRule(craftFilter) || filteredCrafts.includes(craft.name))
+
+    parser.yy.parsedFlows = parser.yy.parsedFlows.filter(flow => flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter))
     return parser.yy
 }
 

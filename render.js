@@ -1,6 +1,6 @@
 const mustache = require('mustache')
 
-String.prototype.replaceAll = function (search, replacement) {
+String.prototype.replaceAll = function(search, replacement) {
     return this.split(search).join(replacement)
 }
 
@@ -8,12 +8,17 @@ function render_diagraph(d) {
     return `
         digraph {
             node [shape="box"];
-            ${render_groups(d.groups, d.crafts)}
-            ${render_flows(d.flows)}
+            ${render_root_crafts(d.parsedCrafts)}
+            ${render_groups(d.groups, d.parsedCrafts)}
+            ${render_flows(d.parsedFlows)}
         }
         `
 }
 
+function render_root_crafts(crafts) {
+    const rootCrafts = crafts.filter(c => !('group' in c))
+    return rootCrafts.map(craft => render_craft(craft)).join('')
+}
 
 function render_groups(groups, crafts) {
     const rootGroups = Object.keys(groups).filter(x => groups[x].parent == '').map(x => groups[x])
@@ -21,7 +26,7 @@ function render_groups(groups, crafts) {
 }
 
 function render_group(group, crafts, groups) {
-    let crafts_contents = group.crafts.map(craft => render_craft(crafts[craft])).join('')
+    let crafts_contents = crafts.filter(c => c.group == group.name).map(craft => render_craft(craft)).join('')
     let groups_contests = group.subgroups.map(subgroup => render_group(groups[subgroup], crafts, groups)).join('')
     return `
     subgraph cluster_${group.name.replace('-', '_')} {
@@ -38,9 +43,9 @@ function render_craft(craft) {
     let template = `
     {{ craftid }} [
         shape="plaintext";
-        {{#styles}}
+        {{#styleAttrs}}
         {{{.}}}
-        {{/styles}}
+        {{/styleAttrs}}
         label=<
             <table border='0' cellborder='1' cellspacing='0'>
                 <tr><td>{{ name }}</td></tr>
@@ -66,8 +71,8 @@ function render_craft(craft) {
 function render_flows(flows) {
     let flowsRenderd = []
     for (f of flows) {
-        if ('styles' in f) {
-            flowsRenderd.push(`${f.from.replaceAll('-', '_')}->${f.to.replaceAll('-', '_')}[${f.styles.join('')}]`)
+        if ('styleAttrs' in f) {
+            flowsRenderd.push(`${f.from.replaceAll('-', '_')}->${f.to.replaceAll('-', '_')}[${f.styleAttrs.join('')}]`)
         } else {
             flowsRenderd.push(`${f.from.replaceAll('-', '_')}->${f.to.replaceAll('-', '_')}`)
         }

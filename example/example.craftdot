@@ -42,13 +42,17 @@ service* [color: red] {
     ports: "tcp/3001"
 }
 
+service-* {
+  ports: "tcp/3003"
+}
+
 service1 -> registry
 service2 -> registry
 service1 -> service2
 service-5 -> service1
 service4 -> service1
 registry -> builder
-sevice2 -> service4
+service2 -> service4
 service4 -> service-5
 * -> service* [color: red]
 * -> db* [color: red]
