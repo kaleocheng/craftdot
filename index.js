@@ -9,8 +9,14 @@ commander
     .option('--filter [filter]', 'Filter crafts')
     .parse(process.argv);
 
-craftdot = fs.readFileSync(commander.args[0], 'utf8')
-p = parser.parse(craftdot, commander.filter)
-//console.log(util.inspect(p, false, null, true))
-output = render.render_diagraph(p)
+const craftdots = commander.args.map(f => {
+    if (!fs.existsSync(f)) {
+        console.log(`${f} is not exist`)
+        exit()
+    }
+    return fs.readFileSync(f, 'utf8')
+})
+
+const crafts = parser.parse(craftdots, commander.filter)
+output = render.render_diagraph(crafts)
 console.log(output)

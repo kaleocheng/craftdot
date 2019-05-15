@@ -153,7 +153,11 @@ const yy = {
     },
 
     addCraft: (craft) => {
-        yy.crafts[craft.name] = craft
+        if (craft.name in yy.crafts) {
+            yy.crafts[craft.name] = mergeCraft(yy.crafts[craft.name], craft)
+        } else {
+            yy.crafts[craft.name] = craft
+        }
     },
     addFlow: (flow) => {
         yy.flows.push(flow)
@@ -166,11 +170,7 @@ const yy = {
         for (let wc of wildcardCrafts.reverse()) {
             crafts = crafts.map(c => {
                 if (c.name.matchRule(wc.name)) {
-                    if ('attrs' in c && 'attrs' in wc) {
-                        let cnames = c.attrs.map(x => x.name)
-                        let defaultAttrs = wc.attrs.filter(x => !cnames.includes(x.name))
-                        c.attrs.push(...defaultAttrs)
-                    }
+                    c = mergeCraft(c, wc)
                     let {
                         name,
                         wildcard,
@@ -215,8 +215,37 @@ const yy = {
 
 parser.yy = yy
 
-const parse = (craftdot, craftFilter) => {
-    parser.parse(craftdot)
+function mergeCrafts(craftsA, craftsB) {
+    const craftsANames = Object.keys(craftA)
+    const craftsBNames = Object.keys(craftB)
+    const intersection = craftsANames.filter(v => craftsBNames.includes(v))
+    const missing = craftsANames
+        .concat(craftsBNames)
+        .filter(v => !craftsANames.includes(v) || !craftsBNames.includes(v))
+        .filter(v => craftsBNames.includes(v))
+    for (let m of missing) {
+        craftsA[m] = craftsB
+    }
+
+    for (let i of intersection) {
+        craftsA[i] = mergeCraft(craftsA[i], craftsB[i])
+    }
+    return craftsA
+}
+
+function mergeCraft(craftA, craftB) {
+    if ('attrs' in craftA && 'attrs' in craftB) {
+        let attrs = craftA.attrs.map(x => x.name)
+        let missingAttrs = craftB.attrs.filter(x => !attrs.includes(x.name))
+        craftA.attrs.push(...missingAttrs)
+    }
+    return craftA
+}
+
+const parse = (craftdots, craftFilter) => {
+    for (let craftdot of craftdots) {
+        parser.parse(craftdot)
+    }
     parser.yy.parseWildcard()
     const filteredCrafts = []
     for (let flow of parser.yy.parsedFlows) {
@@ -228,6 +257,7 @@ const parse = (craftdot, craftFilter) => {
     parser.yy.parsedCrafts = parser.yy.parsedCrafts.filter(craft => craft.name.matchRule(craftFilter) || filteredCrafts.includes(craft.name))
 
     parser.yy.parsedFlows = parser.yy.parsedFlows.filter(flow => flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter))
+
     return parser.yy
 }
 
