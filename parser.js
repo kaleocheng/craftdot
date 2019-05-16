@@ -32,12 +32,17 @@ const grammar = {
         ],
         'node': [
             ['GROUP NAME OP nodes CP', '{$$=yy.newGroup($2, $4); yy.addGroup($$)}'],
-            ['NAME', '{$$=yy.newCraft($1); yy.addCraft($$)}'],
-            ['NAME OP attrs CP', '{$$=yy.newCraft($1, $3);  yy.addCraft($$) }'],
-            ['NAME OB styleAttrs CB OP attrs CP', '{$$=yy.newCraft($1, $6, $3); yy.addCraft($$)}'],
-            ['NAME OB styleAttrs CB', '{$$=yy.newCraft($1, "", $3); yy.addCraft($$)}'],
+            ['names', '{$$=yy.newCrafts($1); yy.addCrafts($$)}'],
+            ['names OP attrs CP', '{$$=yy.newCrafts($1, $3);  yy.addCrafts($$) }'],
+            ['names OB styleAttrs CB OP attrs CP', '{$$=yy.newCrafts($1, $6, $3); yy.addCrafts($$)}'],
+            ['names OB styleAttrs CB', '{$$=yy.newCrafts($1, "", $3); yy.addCrafts($$)}'],
             'flow'
         ],
+        'names': [
+            ['names COMMA name', '{$$=yy.appendOrNewArray($$, $3)}'],
+            ['name', '{$$=yy.appendOrNewArray($$, $1)}']
+        ],
+        'name': ['NAME'],
         'attrs': [
             ['attrs attr', '{$$=yy.appendOrNewArray($$, $2)}'],
             ['attr', '{$$=yy.appendOrNewArray($$, $1)}']
@@ -80,7 +85,11 @@ const yy = {
         if (!Array.isArray(nodes)) {
             nodes = []
         }
-        nodes.push(node)
+        if (Array.isArray(node)) {
+            nodes = nodes.concat(node)
+        } else {
+            nodes.push(node)
+        }
         return nodes
     },
     newGroup: (name, childs) => {
@@ -103,6 +112,13 @@ const yy = {
             }
         }
         return g
+    },
+    newCrafts: (names, attrs, styleAttrs) => {
+        let crafts = []
+        for (let name of names) {
+            crafts.push(yy.newCraft(name, attrs, styleAttrs))
+        }
+        return crafts
     },
     newCraft: (name, attrs, styleAttrs) => {
         const c = {
@@ -150,6 +166,11 @@ const yy = {
             yy.groups[subg]['parent'] = group.name
         }
         yy.groups[group.name] = group
+    },
+    addCrafts: (crafts) => {
+        for (let craft of crafts) {
+            yy.addCraft(craft)
+        }
     },
 
     addCraft: (craft) => {

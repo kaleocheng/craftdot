@@ -38,7 +38,7 @@ bgcolor: blue] {
     }
 }
 
-service* [color: red] {
+service*, docker* [color: red] {
     ports: "tcp/3001"
 }
 

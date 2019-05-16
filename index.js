@@ -7,6 +7,7 @@ const commander = require('commander')
 
 commander
     .option('--filter [filter]', 'Filter crafts')
+    .option('--show-object', 'Just show object, do not render')
     .parse(process.argv);
 
 const craftdots = commander.args.map(f => {
@@ -18,5 +19,9 @@ const craftdots = commander.args.map(f => {
 })
 
 const crafts = parser.parse(craftdots, commander.filter)
-output = render.render_diagraph(crafts)
-console.log(output)
+if (commander.showObject) {
+    console.log(util.inspect(crafts, false, null, true))
+} else {
+    output = render.render_diagraph(crafts)
+    console.log(output)
+}
