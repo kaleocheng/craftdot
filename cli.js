@@ -13,7 +13,7 @@ const pkg = require('./package.json')
 commander
     .name('craftdot')
     .version(pkg.version)
-    .option('--show-in-browser', 'show diagram in default brower')
+    .option('-b, --show-in-browser', 'show diagram in default brower')
     .option('--filter [*]', 'filter crafts, support wildcard such as service* (default is *)')
     .option('--show-object', 'just show object, do not render')
     .parse(process.argv);
