@@ -255,7 +255,8 @@ function mergeCrafts(craftsA, craftsB) {
 }
 
 function mergeCraft(craftA, craftB) {
-    if ('attrs' in craftA && 'attrs' in craftB) {
+    if ('attrs' in craftB) {
+        craftA['attrs'] = craftA.attrs || []
         let attrs = craftA.attrs.map(x => x.name)
         let missingAttrs = craftB.attrs.filter(x => !attrs.includes(x.name))
         craftA.attrs.push(...missingAttrs)
@@ -264,6 +265,7 @@ function mergeCraft(craftA, craftB) {
 }
 
 const parse = (craftdots, craftFilter) => {
+    craftFilter = craftFilter || '*'
     for (let craftdot of craftdots) {
         parser.parse(craftdot)
     }
