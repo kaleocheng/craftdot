@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs')
 const render = require('./render')
 const parser = require('./parser')
