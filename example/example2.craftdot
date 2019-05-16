@@ -1,3 +1,0 @@
-service1 {
-    ports: hello
-}

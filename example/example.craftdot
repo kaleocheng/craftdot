@@ -1,59 +1,57 @@
-group gce {
-    registry
+service1
+
+group AWS {
+    service2 {
+        hosts:
+            - 172.16.1.4
+            - 172.16.1.5
+    }
+
     builder
-    group gce-us {
-       docker-hub
-       service4 {
-           alias: gce-service
-           domains: "https://service4.example.com
-           envs:
-            - env1
-            - env2
-       }
 
-       group gce-hk {
-           service-5
-       }
-    }
-}
+    group db {
+        mysql-old-cluster {
+            version: 5.6
+            owner: "dba team"
+        }
 
-service3 {
-    note: this-is-a-note
-}
+        mysql-new-cluster {
+            version: 5.7
+            owner: "dba team"
+        }
 
-group aws {
-    service1[color: red, bgcolor: blue] {
-        domains: "https://service1.example.com"
+        redis {
+            version: 4
+            buckets:
+                - example1
+                - example2
+        }
 
-    }
-    service2 [color: red,bg: blue
-
-bgcolor: blue] {
-        domains:
-            - "https://service2.example.com"
-            - "https://service2-1.example.com"
-
-        ports: "Nginx TCP/443-444"
 
     }
 }
 
-service*, docker* [color: red] {
-    ports: "tcp/3001"
+group GCE {
+    service3 {
+        hosts:
+            - 172.16.1.4
+            - 172.16.1.5
+    }
+    registry[fillcolor: skyblue, style:filled]
+
 }
 
-service-* {
-  ports: "tcp/3003"
-}
 
-service1 -> registry
-service2 -> registry
+mysql-* [fillcolor: cornflowerblue, style:filled]
+
 service1 -> service2
-service-5 -> service1
-service4 -> service1
+service1 -> service3
 registry -> builder
-service2 -> service4
-service4 -> service-5
-* -> service* [color: red]
-* -> db* [color: red]
+service2 -> mysql-new-cluster
+service3 -> mysql-old-cluster
+service2 -> redis
+service3 -> redis
+builder -> service2
+builder -> service3
 
+* -> mysql* [color: red]
