@@ -13,9 +13,9 @@ const pkg = require('./package.json')
 commander
     .name('craftdot')
     .version(pkg.version)
-    .option('-b, --show-in-browser', 'show diagram in default brower')
     .option('--filter [*]', 'filter crafts, support wildcard such as service* (default is *)')
     .option('--show-object', 'just show object, do not render')
+    .option('--raw-output', 'output graphviz contents')
     .parse(process.argv);
 
 if (!commander.args.length) {
@@ -38,7 +38,7 @@ if (commander.showObject) {
 }
 const output = render.render_diagraph(crafts)
 
-if (commander.showInBrowser) {
+if (!commander.rawOutput) {
     let html = `
     <!DOCTYPE html>
     <meta charset="utf-8">
