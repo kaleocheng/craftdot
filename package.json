@@ -1,6 +1,6 @@
 {
     "name": "craftdot",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "craftdot is a wapper of graphviz to get pretty diagram for your architecture/services diagrams.",
     "main": "index.js",
     "directories": {
