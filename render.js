@@ -53,7 +53,7 @@ function render_craft(craft) {
                 <tr>
                     <td cellpadding='4'>
                     <table border='0' cellspacing='0'>
-                        <tr><td>{{ name }}</td></tr>
+                        <tr><td bgcolor="#c4c4c4">{{ name }}</td></tr>
                         {{#items}}
                         <tr><td>{{{ . }}}</td></tr>
                         {{/items}}
