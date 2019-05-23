@@ -20,7 +20,7 @@ const grammar = {
             ['-', "return 'STROKE'"],
             ['>', "return 'LARROW'"],
             [':', "return 'COLON'"],
-            ['([":A-Za-z0-9-].*)', "return 'ITEM'"],
+            ['^\\"([/:A-Za-z0-9-].*)\\"', "return 'ITEM'"],
             ['[\\n\\s\\t\\r]+', '/**/']
         ]
     },
@@ -69,7 +69,7 @@ const grammar = {
             ['styleAttr', '{$$=yy.appendOrNewArray($$, $1)}']
         ],
         'styleAttr': [
-            ['NAME COLON NAME', '{$$=yy.newSAttr($1, $3)}']
+            ['NAME COLON item', '{$$=yy.newSAttr($1, $3)}']
         ],
     }
 }
