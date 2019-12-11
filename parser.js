@@ -1,9 +1,9 @@
 const Parser = require('jison').Parser
 
-String.prototype.replaceAll = function(search, replacement) {
+String.prototype.replaceAll = function (search, replacement) {
     return this.split(search).join(replacement)
 }
-String.prototype.matchRule = function(rule) {
+String.prototype.matchRule = function (rule) {
     return new RegExp('^' + rule.split('*').join('.*') + '$').test(this)
 }
 
@@ -56,7 +56,7 @@ const grammar = {
             ['STROKE item', '{$$=yy.appendOrNewArray($$, $2)}']
         ],
         'item': [
-            'ITEM',
+            ['ITEM', '{$$=yy.newItem($1)}'],
             'NAME'
         ],
         'flow': [
@@ -159,7 +159,7 @@ const yy = {
         return flow
     },
     newSAttr: (key, vaule) => {
-        return `${key}=${vaule};`
+        return `${key}="${vaule}";`
     },
     addGroup: (group) => {
         for (subg of group.subgroups) {
