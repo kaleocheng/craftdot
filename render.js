@@ -1,6 +1,6 @@
 const mustache = require('mustache')
 
-String.prototype.replaceAll = function(search, replacement) {
+String.prototype.replaceAll = function (search, replacement) {
     return this.split(search).join(replacement)
 }
 
@@ -53,10 +53,16 @@ function render_craft(craft) {
                 <tr>
                     <td cellpadding='4'>
                     <table border='0' cellspacing='0'>
-                        <tr><td bgcolor="#c4c4c4">{{ name }}</td></tr>
+                    {{#value}}
+                        <tr><td align="left" >{{ name }}: </td><td align="left">{{ value }}</td></tr>
+                    {{/value}}
+                    {{^value}}
+                        <tr><td align="left" bgcolor="#c4c4c4">{{ name }}:</td></tr>
                         {{#items}}
-                        <tr><td>{{{ . }}}</td></tr>
+                        <tr><td align="left">- {{{ . }}}</td></tr>
                         {{/items}}
+                    {{/value}}
+
                     </table>
                     </td>
                 </tr>}

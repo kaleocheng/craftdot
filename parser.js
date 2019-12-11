@@ -138,11 +138,18 @@ const yy = {
         }
         return c
     },
-    newAttr: (name, items) => {
+    newAttr: (name, value) => {
+        if (Array.isArray(value)) {
+            return {
+                name: name,
+                items: value
+            }
+        }
         return {
             name: name,
-            items: items
+            value: value
         }
+
     },
     newItem: (item) => {
         return item.replace(/(^")|("$)/g, "")
