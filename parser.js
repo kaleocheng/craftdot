@@ -21,6 +21,7 @@ const grammar = {
             ['>', "return 'LARROW'"],
             [':', "return 'COLON'"],
             ['^\\"([/:A-Za-z0-9-].*)\\"', "return 'ITEM'"],
+            ['^([/:A-Za-z0-9-].*)', "return 'STRING'"],
             ['[\\n\\s\\t\\r]+', '/**/']
         ]
     },
@@ -57,7 +58,8 @@ const grammar = {
         ],
         'item': [
             ['ITEM', '{$$=yy.newItem($1)}'],
-            'NAME'
+            'NAME',
+            'STRING'
         ],
         'flow': [
             ['NAME STROKE LARROW NAME', '{$$=yy.newFlow($1, $4); yy.addFlow($$)}'],

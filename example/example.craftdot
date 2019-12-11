@@ -3,28 +3,29 @@ service1
 group AWS {
     service2 {
         hosts:
-            - "172.16.1.4"
-            - "172.16.1.5"
+            - 172.16.1.4
+            - 172.16.1.5
+        domain: "https://example.com"
     }
 
     builder
 
     group db {
         mysql-old-cluster {
-            version: "5.6"
+            version: 5.6
             owner: "dba team"
         }
 
         mysql-new-cluster {
-            version: "5.7"
+            version: 5.7
             owner: "dba team"
         }
 
         redis {
-            version: "4"
+            version: 4
             buckets:
-                - "example1"
-                - "example2"
+                - example1
+                - example2
         }
 
 
@@ -34,8 +35,8 @@ group AWS {
 group GCE {
     service3 {
         hosts:
-            - "172.16.1.4"
-            - "172.16.1.5"
+            - 172.16.1.4
+            - 172.16.1.5
     }
     registry[fillcolor: skyblue, style:filled]
 
