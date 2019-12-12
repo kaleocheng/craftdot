@@ -25,7 +25,7 @@ group GCE {
 
 }
 
-
+// comment: use * to match all mysql instances
 mysql-* [fillcolor: cornflowerblue, style:filled]
 
 service1 -> service2

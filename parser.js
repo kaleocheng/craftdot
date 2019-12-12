@@ -13,6 +13,7 @@ String.prototype.matchRule = function (rule) {
 const grammar = {
     'lex': {
         'rules': [
+            ['^//.*\\n', '/**/'],
             ['group', "return 'GROUP'"],
             ['include', "return 'INCLUDE'"],
             ['^[A-Za-z\\*][A-Za-z0-9-\\*]*', "return 'NAME'"],
