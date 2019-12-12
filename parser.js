@@ -20,7 +20,7 @@ const grammar = {
             ['-', "return 'STROKE'"],
             ['>', "return 'LARROW'"],
             [':', "return 'COLON'"],
-            ['^\\"([/:A-Za-z0-9-].*)\\"', "return 'ITEM'"],
+            ['^\\"([/:A-Za-z0-9-\\*].*)\\"', "return 'ITEM'"],
             ['^([/:A-Za-z0-9-].*)', "return 'STRING'"],
             ['[\\n\\s\\t\\r]+', '/**/']
         ]
