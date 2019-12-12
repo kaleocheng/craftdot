@@ -8,6 +8,7 @@ const commander = require('commander')
 const open = require('open')
 const tmp = require('tmp')
 const pkg = require('./package.json')
+const path = require('path')
 
 
 commander
@@ -30,12 +31,24 @@ const craftdots = commander.args.map(f => {
     }
     return fs.readFileSync(f, 'utf8')
 })
+if (commander.args.length != 1) {
+    console.log(`Craftdot just use the first file and ignore all others`)
+}
 
-const crafts = parser.parse(craftdots, commander.filter)
+const craftdotFile = commander.args[0]
+if (!fs.existsSync(craftdotFile)) {
+    console.log(`${craftdotFile} is not exist`)
+    process.exit()
+}
+const craftdot = fs.readFileSync(craftdotFile, 'utf8')
+const cwd = path.dirname(craftdotFile)
+
+const crafts = parser.parse(craftdot, commander.filter, cwd)
 if (commander.showObject) {
     console.log(util.inspect(crafts, false, null, true))
     process.exit()
 }
+
 const output = render.render_diagraph(crafts)
 
 if (!commander.rawOutput) {

@@ -1,4 +1,7 @@
 const Parser = require('jison').Parser
+const fs = require('fs')
+const path = require('path')
+
 
 String.prototype.replaceAll = function (search, replacement) {
     return this.split(search).join(replacement)
@@ -11,6 +14,7 @@ const grammar = {
     'lex': {
         'rules': [
             ['group', "return 'GROUP'"],
+            ['include', "return 'INCLUDE'"],
             ['^[A-Za-z\\*][A-Za-z0-9-\\*]*', "return 'NAME'"],
             [',', "return 'COMMA'"],
             ['\\{', "return 'OP'"],
@@ -37,6 +41,7 @@ const grammar = {
             ['names OP attrs CP', '{$$=yy.newCrafts($1, $3);  yy.addCrafts($$) }'],
             ['names OB styleAttrs CB OP attrs CP', '{$$=yy.newCrafts($1, $6, $3); yy.addCrafts($$)}'],
             ['names OB styleAttrs CB', '{$$=yy.newCrafts($1, "", $3); yy.addCrafts($$)}'],
+            ['INCLUDE OP ITEM CP', '{{$$=yy.newInclude($3); yy.addInclude($$)}}'],
             'flow'
         ],
         'names': [
@@ -78,11 +83,14 @@ const grammar = {
 
 const parser = new Parser(grammar)
 const yy = {
+    group: 'root',
     crafts: {},
+    includes: {},
     parsedCrafts: [],
     parsedFlows: [],
     groups: {},
     flows: [],
+    cwd: '',
     appendOrNewArray: (nodes, node) => {
         if (!Array.isArray(nodes)) {
             nodes = []
@@ -99,8 +107,13 @@ const yy = {
             name: name,
             type: 'group',
             crafts: [],
+            includes: [],
             subgroups: [],
             parent: ''
+        }
+        if (yy.group !== 'root') {
+            g.parent = yy.group
+            yy.groups[yy.group].subgroups.push(name)
         }
         for (child of childs) {
             switch (child.type) {
@@ -110,6 +123,10 @@ const yy = {
                 case 'craft':
                     g.crafts.push(child.name)
                     yy.crafts[child.name]['group'] = name
+                    break
+                case 'include':
+                    g.includes.push(child.path)
+                    yy.includes[child.path]['group'] = name
                     break
             }
         }
@@ -127,6 +144,10 @@ const yy = {
             type: 'craft',
             name: name
         }
+        if (yy.group !== 'root') {
+            c['group'] = yy.group
+            yy.groups[yy.group].crafts.push(name)
+        }
         if (name.includes('*')) {
             c['wildcard'] = true
         }
@@ -137,6 +158,20 @@ const yy = {
             c['styleAttrs'] = styleAttrs
         }
         return c
+    },
+    newInclude: (includePath) => {
+        includePath = includePath.replace(/(^")|("$)/g, "")
+        includePath = path.join(yy.cwd, includePath)
+        if (fs.existsSync(includePath)) {
+            return {
+                type: 'include',
+                path: includePath,
+            }
+        }
+        return {
+            type: 'include',
+            path: "",
+        }
     },
     newAttr: (name, value) => {
         if (Array.isArray(value)) {
@@ -187,6 +222,11 @@ const yy = {
             yy.crafts[craft.name] = mergeCraft(yy.crafts[craft.name], craft)
         } else {
             yy.crafts[craft.name] = craft
+        }
+    },
+    addInclude: (include) => {
+        if (!(include.path in yy.includes)) {
+            yy.includes[include.path] = include
         }
     },
     addFlow: (flow) => {
@@ -273,12 +313,24 @@ function mergeCraft(craftA, craftB) {
     return craftA
 }
 
-const parse = (craftdots, craftFilter) => {
+const parse = (craftdot, craftFilter, cwd, group) => {
     craftFilter = craftFilter || '*'
-    for (let craftdot of craftdots) {
-        parser.parse(craftdot)
+    parser.yy.cwd = cwd
+    if (group) {
+        parser.yy.group = group
     }
+    parser.parse(craftdot)
     parser.yy.parseWildcard()
+    if (Object.entries(parser.yy.includes).length !== 0 && parser.yy.includes.constructor === Object) {
+        for (let index in parser.yy.includes) {
+            const include = parser.yy.includes[index]
+            const includeCraftdot = fs.readFileSync(include.path, 'utf8')
+            delete parser.yy.includes[index]
+            const includeCwd = path.dirname(include.path)
+            parse(includeCraftdot, craftFilter, includeCwd, include.group)
+        }
+    }
+
     const filteredCrafts = []
     for (let flow of parser.yy.parsedFlows) {
         if (flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter)) {
@@ -287,9 +339,7 @@ const parse = (craftdots, craftFilter) => {
         }
     }
     parser.yy.parsedCrafts = parser.yy.parsedCrafts.filter(craft => craft.name.matchRule(craftFilter) || filteredCrafts.includes(craft.name))
-
     parser.yy.parsedFlows = parser.yy.parsedFlows.filter(flow => flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter))
-
     return parser.yy
 }
 
