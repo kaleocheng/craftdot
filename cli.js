@@ -15,8 +15,7 @@ commander
     .name('craftdot')
     .version(pkg.version)
     .option('--filter [*]', 'filter crafts, support wildcard such as service* (default is *)')
-    .option('--show-object', 'just show object, do not render')
-    .option('--raw-output', 'output graphviz contents')
+    .option('--format [type]', 'output raw data with format, support [dot, json, browser], (default is open with  browser', 'browser')
     .parse(process.argv);
 
 if (!commander.args.length) {
@@ -44,14 +43,22 @@ const craftdot = fs.readFileSync(craftdotFile, 'utf8')
 const cwd = path.dirname(craftdotFile)
 
 const crafts = parser.parse(craftdot, commander.filter, cwd)
-if (commander.showObject) {
-    console.log(util.inspect(crafts, false, null, true))
+if (commander.format == 'json') {
+    console.log(JSON.stringify(crafts))
     process.exit()
 }
 
 const output = render.render_diagraph(crafts)
 
-if (!commander.rawOutput) {
+if (commander.format == 'dot') {
+    console.log(output)
+    process.exit()
+}
+
+
+console.log(commander.format)
+if (commander.format == 'browser') {
+    // Open with browser
     let html = `
     <!DOCTYPE html>
     <meta charset="utf-8">
@@ -78,5 +85,3 @@ if (!commander.rawOutput) {
     htmlFile.removeCallback()
     process.exit()
 }
-
-console.log(output)
