@@ -16,6 +16,7 @@ commander
     .version(pkg.version)
     .option('--filter [*]', 'filter crafts, support wildcard such as service* (default is *)')
     .option('--format [type]', 'output raw data with format, support [dot, json, browser], (default is open with  browser', 'browser')
+    .option('--debug', 'print parsed object for debug')
     .parse(process.argv);
 
 if (!commander.args.length) {
@@ -43,6 +44,12 @@ const craftdot = fs.readFileSync(craftdotFile, 'utf8')
 const cwd = path.dirname(craftdotFile)
 
 const crafts = parser.parse(craftdot, commander.filter, cwd)
+
+if (commander.debug) {
+    console.log(util.inspect(crafts, false, null, true))
+    process.exit()
+}
+
 if (commander.format == 'json') {
     console.log(JSON.stringify(crafts))
     process.exit()
@@ -56,7 +63,6 @@ if (commander.format == 'dot') {
 }
 
 
-console.log(commander.format)
 if (commander.format == 'browser') {
     // Open with browser
     let html = `
