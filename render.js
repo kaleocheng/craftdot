@@ -29,7 +29,7 @@ function render_group(group, crafts, groups) {
     let crafts_contents = crafts.filter(c => c.group == group.name).map(craft => render_craft(craft)).join('')
     let groups_contests = group.subgroups.map(subgroup => render_group(groups[subgroup], crafts, groups)).join('')
     return `
-    subgraph cluster_${group.name.replace('-', '_')} {
+    subgraph cluster_${group.name.replace(/-/g, '_')} {
         label="${group.name}";
         ${crafts_contents}
         ${groups_contests}
