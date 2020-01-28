@@ -84,7 +84,7 @@ const grammar = {
 
 const parser = new Parser(grammar)
 const yy = {
-    group: 'root',
+    fileGroup: 'root',
     crafts: {},
     includes: {},
     parsedCrafts: [],
@@ -112,9 +112,9 @@ const yy = {
             subgroups: [],
             parent: ''
         }
-        if (yy.group !== 'root') {
-            g.parent = yy.group
-            yy.groups[yy.group].subgroups.push(name)
+        if (yy.fileGroup !== 'root') {
+            g.parent = yy.fileGroup
+            yy.groups[yy.fileGroup].subgroups.push(name)
         }
         for (child of childs) {
             switch (child.type) {
@@ -145,9 +145,9 @@ const yy = {
             type: 'craft',
             name: name
         }
-        if (yy.group !== 'root') {
-            c['group'] = yy.group
-            yy.groups[yy.group].crafts.push(name)
+        if (yy.fileGroup !== 'root') {
+            c['group'] = yy.fileGroup
+            yy.groups[yy.fileGroup].crafts.push(name)
         }
         if (name.includes('*')) {
             c['wildcard'] = true
@@ -318,7 +318,7 @@ const parse = (craftdot, craftFilter, cwd, group) => {
     craftFilter = craftFilter || '*'
     parser.yy.cwd = cwd
     if (group) {
-        parser.yy.group = group
+        parser.yy.fileGroup = group
     }
     parser.parse(craftdot)
     parser.yy.parseWildcard()
