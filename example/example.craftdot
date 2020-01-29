@@ -38,8 +38,8 @@ service1 -> service3
 registry -> builder
 service2 -> mysql-new-cluster
 service3 -> mysql-old-cluster
-service2 -> redis
-service3 -> redis
+service2 -> AWS-db-redis
+service3 -> AWS-db-redis
 builder -> service2
 builder -> service3[label: "localhost\:80"]
 
