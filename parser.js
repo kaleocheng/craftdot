@@ -92,6 +92,7 @@ const yy = {
     parsedCrafts: [],
     parsedGroups: [],
     parsedFlows: [],
+    parsedNodes: {},
     groups: {},
     flows: [],
     cwd: '',
@@ -324,40 +325,55 @@ const yy = {
             })
         }
 
-        let craftsPath = {}
-        let craftsName = {}
+        let paths = {}
+        let names = {}
         crafts.forEach(c => {
-            if (c.path in craftsPath) {
+            if (c.path in paths) {
                 console.log(`${c.path} already exist`)
                 process.exit()
             }
-            craftsPath[c.path] = c.path
+            paths[c.path] = c.path
 
-            if (c.name in craftsName) {
-                craftsName[c.name].push(c.path)
+            if (c.name in names) {
+                names[c.name].push(c.path)
             } else {
-                craftsName[c.name] = []
-                craftsName[c.name].push(c.path)
+                names[c.name] = []
+                names[c.name].push(c.path)
+            }
+        })
+
+        Object.keys(groups).map(g => groups[g]).forEach(g => {
+            if (g.path in paths) {
+                console.log(`${g.path} already exist`)
+                process.exit()
+            }
+            paths[g.path] = g.path
+
+            if (g.name in names) {
+                names[g.name].push(g.path)
+            } else {
+                names[g.name] = []
+                names[g.name].push(g.path)
             }
         })
 
         flows.forEach(f => {
-            if (f.from in craftsPath) {
-                f.fromPath = craftsPath[f.from]
+            if (f.from in paths) {
+                f.fromPath = paths[f.from]
                 return
             }
-            if (f.from in craftsName) {
-                if (craftsName[f.from].length == 1) {
-                    f.fromPath = craftsName[f.from][0]
+            if (f.from in names) {
+                if (names[f.from].length == 1) {
+                    f.fromPath = names[f.from][0]
                     return
                 }
-                if (craftsName[f.from].length == 0) {
+                if (names[f.from].length == 0) {
                     console.log(`${f.from} didn't found`)
                     process.exit()
                 }
-                if (craftsName[f.from].length > 1) {
+                if (names[f.from].length > 1) {
                     console.log('conflict crafts, use full path:')
-                    craftsName[f.from].forEach(c => {
+                    names[f.from].forEach(c => {
                         console.log(`${yy.crafts[c].path}`)
                     })
                     process.exit()
@@ -368,22 +384,22 @@ const yy = {
         })
 
         flows.forEach(f => {
-            if (f.to in craftsPath) {
-                f.toPath = craftsPath[f.to]
+            if (f.to in paths) {
+                f.toPath = paths[f.to]
                 return
             }
-            if (f.to in craftsName) {
-                if (craftsName[f.to].length == 1) {
-                    f.toPath = craftsName[f.to][0]
+            if (f.to in names) {
+                if (names[f.to].length == 1) {
+                    f.toPath = names[f.to][0]
                     return
                 }
-                if (craftsName[f.to].length == 0) {
+                if (names[f.to].length == 0) {
                     console.log(`${f.to} didn't found`)
                     process.exit()
                 }
-                if (craftsName[f.to].length > 1) {
+                if (names[f.to].length > 1) {
                     console.log('conflict crafts, use full path:')
-                    craftsName[f.to].forEach(c => {
+                    names[f.to].forEach(c => {
                         console.log(`${yy.crafts[c].path}`)
                     })
                     process.exit()

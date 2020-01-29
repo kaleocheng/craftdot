@@ -35,6 +35,7 @@ mysql-* [fillcolor: cornflowerblue, style:filled]
 
 service1 -> service2
 service1 -> service3
+service1 -> hk
 registry -> builder
 service2 -> mysql-new-cluster
 service3 -> mysql-old-cluster
