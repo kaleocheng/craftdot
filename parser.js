@@ -87,13 +87,11 @@ const grammar = {
 const parser = new Parser(grammar)
 const yy = {
     fileGroup: 'root',
-    crafts: {},
+    nodes: {},
     includes: {},
-    parsedCrafts: [],
-    parsedGroups: [],
     parsedFlows: [],
-    parsedNodes: {},
-    groups: {},
+    parsedNodes: [],
+    nodePath2ID: {},
     flows: [],
     cwd: '',
     appendOrNewArray: (nodes, node) => {
@@ -120,7 +118,7 @@ const yy = {
         }
         if (yy.fileGroup !== 'root') {
             g.parent = yy.fileGroup
-            yy.groups[yy.fileGroup].subgroups.push(g.id)
+            yy.nodes[yy.fileGroup].subgroups.push(g.id)
         }
         for (child of childs) {
             switch (child.type) {
@@ -129,7 +127,7 @@ const yy = {
                     break
                 case 'craft':
                     g.crafts.push(child.id)
-                    yy.crafts[child.id]['group'] = g.id
+                    yy.nodes[child.id]['group'] = g.id
                     break
                 case 'include':
                     g.includes.push(child.path)
@@ -155,7 +153,7 @@ const yy = {
         }
         if (yy.fileGroup !== 'root') {
             c['group'] = yy.fileGroup
-            yy.groups[yy.fileGroup].crafts.push(name)
+            yy.nodes[yy.fileGroup].crafts.push(c.id)
         }
 
         if (name.includes('*')) {
@@ -224,26 +222,26 @@ const yy = {
     },
     parseGroupPath: (gid, parentGroupID,  groups) => {
         if (parentGroupID) {
-            yy.groups[gid].path = `${yy.groups[parentGroupID].path}-${yy.groups[gid].name}`
+            yy.nodes[gid].path = `${yy.nodes[parentGroupID].path}-${yy.nodes[gid].name}`
         } else {
-            yy.groups[gid].path = yy.groups[gid].name
+            yy.nodes[gid].path = yy.nodes[gid].name
         }
 
-        if (yy.groups[gid].path in groups){
-            console.log(`${yy.groups[gid].path} already exist`)
+        if (yy.nodes[gid].path in groups){
+            console.log(`${yy.nodes[gid].path} already exist`)
             process.exit()
         }
 
-        groups[yy.groups[gid].path] = yy.groups[gid]
-        yy.groups[gid].subgroups.forEach(g => {
+        groups[yy.nodes[gid].path] = yy.nodes[gid]
+        yy.nodes[gid].subgroups.forEach(g => {
             yy.parseGroupPath(g, gid, groups)
         })
     },
     addGroup: (group) => {
         for (subg of group.subgroups) {
-            yy.groups[subg]['parent'] = group.id
+            yy.nodes[subg]['parent'] = group.id
         }
-        yy.groups[group.id] = group
+        yy.nodes[group.id] = group
     },
     addCrafts: (crafts) => {
         for (let craft of crafts) {
@@ -252,10 +250,10 @@ const yy = {
     },
 
     addCraft: (craft) => {
-        if (craft.id in yy.crafts) {
-            yy.crafts[craft.id] = mergeCraft(yy.crafts[craft.id], craft)
+        if (craft.id in yy.nodes) {
+            yy.nodes[craft.id] = mergeCraft(yy.nodes[craft.id], craft)
         } else {
-            yy.crafts[craft.id] = craft
+            yy.nodes[craft.id] = craft
         }
     },
     addInclude: (include) => {
@@ -268,20 +266,20 @@ const yy = {
     },
 
     parseWildcard: () => {
-        const wildcardCrafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => 'wildcard' in c && c.wildcard == true)
+        const wildcardCrafts = Object.keys(yy.nodes).filter(n => yy.nodes[n].type == 'craft').map(c => yy.nodes[c]).filter(c => 'wildcard' in c && c.wildcard == true)
         const wildcardFlows = yy.flows.filter(f => 'wildcard' in f && f.wildcard == true)
-        const rootGroups = Object.keys(yy.groups).map(g => yy.groups[g]).filter(g => !g.parent)
+        const rootGroups = Object.keys(yy.nodes).filter(n => yy.nodes[n].type == 'group').map(g => yy.nodes[g]).filter(g => !g.parent)
         let groups = {}
         rootGroups.forEach(g => {
             yy.parseGroupPath(g.id, '', groups)
         })
 
 
-        let crafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => !('wildcard' in c))
+        let crafts = Object.keys(yy.nodes).filter(n => yy.nodes[n].type =='craft').map(c => yy.nodes[c]).filter(c => !('wildcard' in c))
         let flows = yy.flows.filter(f => !('wildcard' in f))
         crafts.forEach(c => {
             if ('group' in c) {
-                c.path = `${yy.groups[c.group].path}-${c.name}`
+                c.path = `${yy.nodes[c.group].path}-${c.name}`
             }
         })
         for (let wc of wildcardCrafts.reverse()) {
@@ -333,7 +331,7 @@ const yy = {
                 process.exit()
             }
             paths[c.path] = c.path
-            yy.parsedNodes[c.path] = c
+            yy.nodePath2ID[c.path] = c.id
 
             if (c.name in names) {
                 names[c.name].push(c.path)
@@ -349,7 +347,7 @@ const yy = {
                 process.exit()
             }
             paths[g.path] = g.path
-            yy.parsedNodes[g.path] = g
+            yy.nodePath2ID[g.path] = g.id
 
             if (g.name in names) {
                 names[g.name].push(g.path)
@@ -376,7 +374,7 @@ const yy = {
                 if (names[f.from].length > 1) {
                     console.log('conflict crafts, use full path:')
                     names[f.from].forEach(c => {
-                        console.log(`${yy.crafts[c].path}`)
+                        console.log(`${yy.nodes[c].path}`)
                     })
                     process.exit()
                 }
@@ -402,15 +400,15 @@ const yy = {
                 if (names[f.to].length > 1) {
                     console.log('conflict crafts, use full path:')
                     names[f.to].forEach(c => {
-                        console.log(`${yy.crafts[c].path}`)
+                        console.log(`${yy.nodes[c].path}`)
                     })
                     process.exit()
                 }
             }
         })
-        yy.parsedCrafts = crafts
+        yy.parsedNodes.push(...crafts)
         yy.parsedFlows = flows
-        yy.parsedGroups = Object.keys(groups).map(g => groups[g])
+        yy.parsedNodes.push(...Object.keys(groups).map(g => groups[g]))
     }
 
 }
@@ -470,7 +468,7 @@ const parse = (craftdot, craftFilter, cwd, group) => {
             filteredCrafts.push(flow.to)
         }
     }
-    parser.yy.parsedCrafts = parser.yy.parsedCrafts.filter(craft => craft.name.matchRule(craftFilter) || filteredCrafts.includes(craft.name))
+    parser.yy.parsedNodes = parser.yy.parsedNodes.filter(n => (n.type =='craft' && (n.name.matchRule(craftFilter) || filteredCrafts.includes(n.name))) || n.type != 'craft')
     parser.yy.parsedFlows = parser.yy.parsedFlows.filter(flow => flow.from.matchRule(craftFilter) || flow.to.matchRule(craftFilter))
     return parser.yy
 }

@@ -8,28 +8,29 @@ function render_diagraph(d) {
     return `
         digraph {
             node [shape="box"];
-            ${render_root_crafts(d.parsedCrafts)}
-            ${render_groups(d.groups, d.parsedCrafts)}
-            ${render_flows(d.parsedFlows)}
+            compound=true;
+            ${render_root_crafts(d.nodes, d.parsedNodes)}
+            ${render_groups(d.nodes, d.parsedNodes)}
+            ${render_flows(d.parsedFlows, d.nodePath2ID, d.nodes)}
         }
         `
 }
 
-function render_root_crafts(crafts) {
-    const rootCrafts = crafts.filter(c => !('group' in c))
+function render_root_crafts(nodesDict, nodesArray) {
+    const rootCrafts = nodesArray.filter(n => n.type == 'craft').filter(c => !('group' in c))
     return rootCrafts.map(craft => render_craft(craft)).join('')
 }
 
-function render_groups(groups, crafts) {
-    const rootGroups = Object.keys(groups).filter(x => groups[x].parent == '').map(x => groups[x])
-    return rootGroups.map(rg => render_group(rg, crafts, groups)).join('')
+function render_groups(nodesDict, nodesArray) {
+    const rootGroups = nodesArray.filter(n => n.type == 'group').filter(g => g.parent == '')
+    return rootGroups.map(rg => render_group(rg, nodesDict, nodesArray)).join('')
 }
 
-function render_group(group, crafts, groups) {
-    let crafts_contents = crafts.filter(c => c.group == group.id).map(craft => render_craft(craft)).join('')
-    let groups_contests = group.subgroups.map(subgroup => render_group(groups[subgroup], crafts, groups)).join('')
+function render_group(group, nodesDict, nodesArray) {
+    let crafts_contents = nodesArray.filter(n => n.type == 'craft').filter(c => c.group == group.id).map(craft => render_craft(craft)).join('')
+    let groups_contests = group.subgroups.map(subgroup => render_group(nodesDict[subgroup], nodesDict, nodesArray)).join('')
     return `
-    subgraph cluster_${group.name.replace(/-/g, '_')} {
+    subgraph cluster_${group.path.replace(/-/g, '_')} {
         label="${group.name}";
         ${crafts_contents}
         ${groups_contests}
@@ -74,15 +75,51 @@ function render_craft(craft) {
     return mustache.render(template, craft)
 }
 
-function render_flows(flows) {
+
+function render_flows(flows, nodePath2ID, nodes) {
     let flowsRenderd = []
     for (f of flows) {
-        if ('styleAttrs' in f) {
-            flowsRenderd.push(`${f.fromPath.replaceAll('-', '_')}->${f.toPath.replaceAll('-', '_')}[${f.styleAttrs.join('')}]`)
-        } else {
-            flowsRenderd.push(`${f.fromPath.replaceAll('-', '_')}->${f.toPath.replaceAll('-', '_')}`)
+        let from = f.fromPath.replaceAll('-', '_')
+        let to = f.toPath.replaceAll('-', '_')
+        let fromGroup = ''
+        let toGroup = ''
+        let fromCraft = ''
+        let toCraft = ''
+        let attr = []
+
+        if (f.fromPath in nodePath2ID) {
+            const nid = nodePath2ID[f.fromPath]
+            if (nodes[nid].type == 'group') {
+                fromGroup = nodes[nid].path.replaceAll('-', '_')
+                fromCraft = nodes[nodes[nid].crafts[0]].path.replaceAll('-', '_')
+            }
         }
+        if (f.toPath in nodePath2ID) {
+            const nid = nodePath2ID[f.toPath]
+            if (nodes[nid].type == 'group') {
+                toGroup = nodes[nid].path.replaceAll('-', '_')
+
+                toCraft = nodes[nodes[nid].crafts[0]].path.replaceAll('-', '_')
+            }
+        }
+
+        if (fromGroup) {
+            from = fromCraft.replaceAll('-', '_')
+            attr.push(`ltail="cluster_${fromGroup}";`)
+        }
+
+        if (toGroup) {
+            to = toCraft.replaceAll('-', '_')
+            attr.push(`lhead="cluster_${toGroup}";`)
+        }
+
+        if ('styleAttrs' in f) {
+            attr.push(...f.styleAttrs)
+        }
+
+        flowsRenderd.push(`${from}->${to}[${attr.join('')}]`)
     }
+
     let template = `
     {{#.}}
     {{{ . }}}
