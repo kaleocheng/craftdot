@@ -149,12 +149,14 @@ const yy = {
         const c = {
             type: 'craft',
             id: newID(),
-            name: name
+            name: name,
+            path: name,
         }
         if (yy.fileGroup !== 'root') {
             c['group'] = yy.fileGroup
             yy.groups[yy.fileGroup].crafts.push(name)
         }
+
         if (name.includes('*')) {
             c['wildcard'] = true
         }
@@ -274,6 +276,11 @@ const yy = {
 
         let crafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => !('wildcard' in c))
         let flows = yy.flows.filter(f => !('wildcard' in f))
+        crafts.forEach(c => {
+            if ('group' in c) {
+                c.path = `${yy.groups[c.group].path}-${c.name}`
+            }
+        })
         for (let wc of wildcardCrafts.reverse()) {
             crafts = crafts.map(c => {
                 if (c.name.matchRule(wc.name)) {
