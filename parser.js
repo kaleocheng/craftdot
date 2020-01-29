@@ -333,6 +333,7 @@ const yy = {
                 process.exit()
             }
             paths[c.path] = c.path
+            yy.parsedNodes[c.path] = c
 
             if (c.name in names) {
                 names[c.name].push(c.path)
@@ -348,6 +349,7 @@ const yy = {
                 process.exit()
             }
             paths[g.path] = g.path
+            yy.parsedNodes[g.path] = g
 
             if (g.name in names) {
                 names[g.name].push(g.path)
