@@ -206,9 +206,9 @@ const yy = {
         const flow = {
             id: newID(),
             from: from,
-            fromID: '',
+            fromPath: '',
             to: to,
-            toID: ''
+            toPath: ''
         }
         if (from.includes('*') || to.includes('*')) {
             flow['wildcard'] = true
@@ -331,24 +331,24 @@ const yy = {
                 console.log(`${c.path} already exist`)
                 process.exit()
             }
-            craftsPath[c.path] = c.id
+            craftsPath[c.path] = c.path
 
             if (c.name in craftsName) {
-                craftsName[c.name].push(c.id)
+                craftsName[c.name].push(c.path)
             } else {
                 craftsName[c.name] = []
-                craftsName[c.name].push(c.id)
+                craftsName[c.name].push(c.path)
             }
         })
 
         flows.forEach(f => {
             if (f.from in craftsPath) {
-                f.fromID = craftsPath[f.from]
+                f.fromPath = craftsPath[f.from]
                 return
             }
             if (f.from in craftsName) {
                 if (craftsName[f.from].length == 1) {
-                    f.fromID = craftsName[f.from][0]
+                    f.fromPath = craftsName[f.from][0]
                     return
                 }
                 if (craftsName[f.from].length == 0) {
@@ -369,12 +369,12 @@ const yy = {
 
         flows.forEach(f => {
             if (f.to in craftsPath) {
-                f.toID = craftsPath[f.to]
+                f.toPath = craftsPath[f.to]
                 return
             }
             if (f.to in craftsName) {
                 if (craftsName[f.to].length == 1) {
-                    f.toID = craftsName[f.to][0]
+                    f.toPath = craftsName[f.to][0]
                     return
                 }
                 if (craftsName[f.to].length == 0) {

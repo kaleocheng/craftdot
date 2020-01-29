@@ -26,7 +26,7 @@ function render_groups(groups, crafts) {
 }
 
 function render_group(group, crafts, groups) {
-    let crafts_contents = crafts.filter(c => c.group == group.name).map(craft => render_craft(craft)).join('')
+    let crafts_contents = crafts.filter(c => c.group == group.id).map(craft => render_craft(craft)).join('')
     let groups_contests = group.subgroups.map(subgroup => render_group(groups[subgroup], crafts, groups)).join('')
     return `
     subgraph cluster_${group.name.replace(/-/g, '_')} {
@@ -39,9 +39,9 @@ function render_group(group, crafts, groups) {
 }
 
 function render_craft(craft) {
-    craft['craftid'] = craft.name.replaceAll('-', '_')
+    craft.path = craft.path.replaceAll('-', '_')
     let template = `
-    {{ craftid }} [
+    {{ path }} [
         shape="plaintext";
         {{#styleAttrs}}
         {{{.}}}
@@ -78,9 +78,9 @@ function render_flows(flows) {
     let flowsRenderd = []
     for (f of flows) {
         if ('styleAttrs' in f) {
-            flowsRenderd.push(`${f.from.replaceAll('-', '_')}->${f.to.replaceAll('-', '_')}[${f.styleAttrs.join('')}]`)
+            flowsRenderd.push(`${f.fromPath.replaceAll('-', '_')}->${f.toPath.replaceAll('-', '_')}[${f.styleAttrs.join('')}]`)
         } else {
-            flowsRenderd.push(`${f.from.replaceAll('-', '_')}->${f.to.replaceAll('-', '_')}`)
+            flowsRenderd.push(`${f.fromPath.replaceAll('-', '_')}->${f.toPath.replaceAll('-', '_')}`)
         }
     }
     let template = `
