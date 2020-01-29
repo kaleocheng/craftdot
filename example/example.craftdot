@@ -21,6 +21,11 @@ group GCE {
             - 172.16.1.4
             - 172.16.1.5
     }
+    group china {
+         group hk {
+             service7
+         }
+    }
     registry[fillcolor: skyblue, style:filled]
 
 }

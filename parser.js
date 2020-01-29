@@ -1,6 +1,8 @@
 const Parser = require('jison').Parser
 const fs = require('fs')
 const path = require('path')
+const crypto = require("crypto")
+const newID = () => { return crypto.randomBytes(10).toString('hex') }
 
 
 String.prototype.replaceAll = function (search, replacement) {
@@ -88,6 +90,7 @@ const yy = {
     crafts: {},
     includes: {},
     parsedCrafts: [],
+    parsedGroups: [],
     parsedFlows: [],
     groups: {},
     flows: [],
@@ -105,6 +108,8 @@ const yy = {
     },
     newGroup: (name, childs) => {
         const g = {
+            id: newID(),
+            path: '',
             name: name,
             type: 'group',
             crafts: [],
@@ -114,20 +119,20 @@ const yy = {
         }
         if (yy.fileGroup !== 'root') {
             g.parent = yy.fileGroup
-            yy.groups[yy.fileGroup].subgroups.push(name)
+            yy.groups[yy.fileGroup].subgroups.push(g.id)
         }
         for (child of childs) {
             switch (child.type) {
                 case 'group':
-                    g.subgroups.push(child.name)
+                    g.subgroups.push(child.id)
                     break
                 case 'craft':
-                    g.crafts.push(child.name)
-                    yy.crafts[child.name]['group'] = name
+                    g.crafts.push(child.id)
+                    yy.crafts[child.id]['group'] = g.id
                     break
                 case 'include':
                     g.includes.push(child.path)
-                    yy.includes[child.path]['group'] = name
+                    yy.includes[child.path]['group'] = g.id
                     break
             }
         }
@@ -143,6 +148,7 @@ const yy = {
     newCraft: (name, attrs, styleAttrs) => {
         const c = {
             type: 'craft',
+            id: newID(),
             name: name
         }
         if (yy.fileGroup !== 'root') {
@@ -166,11 +172,13 @@ const yy = {
         if (fs.existsSync(includePath)) {
             return {
                 type: 'include',
+                id: newID(),
                 path: includePath,
             }
         }
         return {
             type: 'include',
+            id: newID(),
             path: "",
         }
     },
@@ -178,11 +186,13 @@ const yy = {
         if (Array.isArray(value)) {
             return {
                 name: name,
+                id: newID(),
                 items: value
             }
         }
         return {
             name: name,
+            id: newID(),
             value: value
         }
 
@@ -192,6 +202,7 @@ const yy = {
     },
     newFlow: (from, to, styleAttrs) => {
         const flow = {
+            id: newID(),
             from: from,
             to: to
         }
@@ -206,11 +217,28 @@ const yy = {
     newSAttr: (key, vaule) => {
         return `${key}="${vaule}";`
     },
+    parseGroupPath: (gid, parentGroupID,  groups) => {
+        if (parentGroupID) {
+            yy.groups[gid].path = `${yy.groups[parentGroupID].path}-${yy.groups[gid].name}`
+        } else {
+            yy.groups[gid].path = yy.groups[gid].name
+        }
+
+        if (yy.groups[gid].path in groups){
+            console.log(`${yy.groups[gid].path} already exist`)
+            return
+        }
+
+        groups[yy.groups[gid].path] = yy.groups[gid]
+        yy.groups[gid].subgroups.forEach(g => {
+            yy.parseGroupPath(g, gid, groups)
+        })
+    },
     addGroup: (group) => {
         for (subg of group.subgroups) {
-            yy.groups[subg]['parent'] = group.name
+            yy.groups[subg]['parent'] = group.id
         }
-        yy.groups[group.name] = group
+        yy.groups[group.id] = group
     },
     addCrafts: (crafts) => {
         for (let craft of crafts) {
@@ -219,10 +247,10 @@ const yy = {
     },
 
     addCraft: (craft) => {
-        if (craft.name in yy.crafts) {
-            yy.crafts[craft.name] = mergeCraft(yy.crafts[craft.name], craft)
+        if (craft.id in yy.crafts) {
+            yy.crafts[craft.id] = mergeCraft(yy.crafts[craft.id], craft)
         } else {
-            yy.crafts[craft.name] = craft
+            yy.crafts[craft.id] = craft
         }
     },
     addInclude: (include) => {
@@ -233,9 +261,17 @@ const yy = {
     addFlow: (flow) => {
         yy.flows.push(flow)
     },
+
     parseWildcard: () => {
         const wildcardCrafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => 'wildcard' in c && c.wildcard == true)
         const wildcardFlows = yy.flows.filter(f => 'wildcard' in f && f.wildcard == true)
+        const rootGroups = Object.keys(yy.groups).map(g => yy.groups[g]).filter(g => !g.parent)
+        let groups = {}
+        rootGroups.forEach(g => {
+            yy.parseGroupPath(g.id, '', groups)
+        })
+
+
         let crafts = Object.keys(yy.crafts).map(c => yy.crafts[c]).filter(c => !('wildcard' in c))
         let flows = yy.flows.filter(f => !('wildcard' in f))
         for (let wc of wildcardCrafts.reverse()) {
@@ -280,6 +316,7 @@ const yy = {
         }
         yy.parsedCrafts = crafts
         yy.parsedFlows = flows
+        yy.parsedGroups = Object.keys(groups).map(g => groups[g])
     }
 
 }
