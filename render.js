@@ -93,7 +93,7 @@ function render_flows(flows, nodePath2ID, nodes) {
             const nid = nodePath2ID[f.fromPath]
             if (nodes[nid].type == 'group') {
                 fromGroup = nodes[nid].path.replaceAll('-', '_')
-                if (nodes[nid].length == 0) {
+                if (nodes[nid].crafts.length == 0) {
                     fromCraft = `${nodes[nid].path.replaceAll('-', '_')}___invis`
                 } else {
                     const index = Math.floor(nodes[nid].crafts.length / 2)
@@ -105,7 +105,7 @@ function render_flows(flows, nodePath2ID, nodes) {
             const nid = nodePath2ID[f.toPath]
             if (nodes[nid].type == 'group') {
                 toGroup = nodes[nid].path.replaceAll('-', '_')
-                if (nodes[nid].length == 0) {
+                if (nodes[nid].crafts.length == 0) {
                     toCraft = `${nodes[nid].path.replaceAll('-', '_')}___invis`
                 } else {
                     const index = Math.floor(nodes[nid].crafts.length / 2)
