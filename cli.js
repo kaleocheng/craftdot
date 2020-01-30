@@ -9,6 +9,9 @@ const open = require('open')
 const tmp = require('tmp')
 const pkg = require('./package.json')
 const path = require('path')
+const fastify = require('fastify')({
+  logger: true
+})
 
 
 commander
@@ -81,13 +84,12 @@ if (commander.format == 'browser') {
         </script>
     </body>
     `
-    let htmlFile = tmp.fileSync({
-        postfix: '.html'
+    fastify.get('/', (request, reply) => {
+        reply.type('text/html').send(html)
     })
-    fs.writeFileSync(htmlFile.name, html);
-    (async () => {
-        await open(`file://${htmlFile.name}`);
-    })();
-    htmlFile.removeCallback()
-    process.exit()
+
+    fastify.listen(8333, (err, address) => {
+        if (err) throw err
+        fastify.log.info(`server listening on ${address}`)
+    })
 }
