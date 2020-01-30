@@ -91,15 +91,16 @@ function render_flows(flows, nodePath2ID, nodes) {
             const nid = nodePath2ID[f.fromPath]
             if (nodes[nid].type == 'group') {
                 fromGroup = nodes[nid].path.replaceAll('-', '_')
-                fromCraft = nodes[nodes[nid].crafts[0]].path.replaceAll('-', '_')
+                const index = Math.floor(nodes[nid].crafts.length / 2)
+                fromCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
             }
         }
         if (f.toPath in nodePath2ID) {
             const nid = nodePath2ID[f.toPath]
             if (nodes[nid].type == 'group') {
                 toGroup = nodes[nid].path.replaceAll('-', '_')
-
-                toCraft = nodes[nodes[nid].crafts[0]].path.replaceAll('-', '_')
+                const index = Math.floor(nodes[nid].crafts.length / 2)
+                toCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
             }
         }
 
