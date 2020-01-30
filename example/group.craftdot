@@ -8,12 +8,14 @@ group a {
     }
 }
 
-a-service -> a-b-c-service
+
+a.service -> a.b.c.service
 
 // edges bettwen groups
 group c {
     service
 }
+
 
 a -> c
 

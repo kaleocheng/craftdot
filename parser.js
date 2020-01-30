@@ -18,7 +18,7 @@ const grammar = {
             ['^//.*\\n', '/**/'],
             ['group', "return 'GROUP'"],
             ['include', "return 'INCLUDE'"],
-            ['^[A-Za-z\\*][A-Za-z0-9-\\*]*', "return 'NAME'"],
+            ['^[A-Za-z\\*][A-Za-z0-9-\\.\\*]*', "return 'NAME'"],
             [',', "return 'COMMA'"],
             ['\\{', "return 'OP'"],
             ['\\}', "return 'CP'"],
@@ -358,24 +358,22 @@ const yy = {
         })
 
         flows.forEach(f => {
-            if (f.from in paths) {
-                f.fromPath = paths[f.from]
+            const from = f.from.replaceAll('.', '-')
+            if (from in paths) {
+                f.fromPath = paths[from]
                 return
             }
-            if (f.from in names) {
-                if (names[f.from].length == 1) {
-                    f.fromPath = names[f.from][0]
+            if (from in names) {
+                if (names[from].length == 1) {
+                    f.fromPath = names[from][0]
                     return
                 }
-                if (names[f.from].length == 0) {
+                if (names[from].length == 0) {
                     console.log(`${f.from} didn't found`)
                     process.exit()
                 }
-                if (names[f.from].length > 1) {
-                    console.log(`conflict crafts '${f.from}', use full path:`)
-                    names[f.from].forEach(c => {
-                        console.log(c)
-                    })
+                if (names[from].length > 1) {
+                    console.log(`conflict crafts '${f.from}', use full path like 'group1.${f.from}' and 'group2.${f.from}'`)
                     process.exit()
                 }
             }
@@ -384,24 +382,22 @@ const yy = {
         })
 
         flows.forEach(f => {
-            if (f.to in paths) {
-                f.toPath = paths[f.to]
+            const to = f.to.replaceAll('.', '-')
+            if (to in paths) {
+                f.toPath = paths[to]
                 return
             }
-            if (f.to in names) {
-                if (names[f.to].length == 1) {
-                    f.toPath = names[f.to][0]
+            if (to in names) {
+                if (names[to].length == 1) {
+                    f.toPath = names[to][0]
                     return
                 }
-                if (names[f.to].length == 0) {
-                    console.log(`${f.to} didn't found`)
+                if (names[to].length == 0) {
+                    console.log(`${to} didn't found`)
                     process.exit()
                 }
-                if (names[f.to].length > 1) {
-                    console.log(`conflict crafts '${f.to}' , use full path:`)
-                    names[f.to].forEach(c => {
-                        console.log(c)
-                    })
+                if (names[to].length > 1) {
+                    console.log(`conflict crafts '${f.to}', use full path like 'group1.${f.to}' and 'group2.${f.to}'`)
                     process.exit()
                 }
             }
