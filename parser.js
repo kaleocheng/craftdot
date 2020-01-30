@@ -228,7 +228,7 @@ const yy = {
         }
 
         if (yy.nodes[gid].path in groups){
-            console.log(`${yy.nodes[gid].path} already exist`)
+            console.log(`'${yy.nodes[gid].name}' already exist as '${yy.nodes[gid].path}'`)
             process.exit()
         }
 
@@ -327,7 +327,7 @@ const yy = {
         let names = {}
         crafts.forEach(c => {
             if (c.path in paths) {
-                console.log(`${c.path} already exist`)
+                console.log(`'${c.name}' already exist as '${c.path}'`)
                 process.exit()
             }
             paths[c.path] = c.path
@@ -343,7 +343,7 @@ const yy = {
 
         Object.keys(groups).map(g => groups[g]).forEach(g => {
             if (g.path in paths) {
-                console.log(`${g.path} already exist`)
+                console.log(`'${g.name}' already exist as '${g.path}'`)
                 process.exit()
             }
             paths[g.path] = g.path
@@ -372,9 +372,9 @@ const yy = {
                     process.exit()
                 }
                 if (names[f.from].length > 1) {
-                    console.log('conflict crafts, use full path:')
+                    console.log(`conflict crafts '${f.from}', use full path:`)
                     names[f.from].forEach(c => {
-                        console.log(`${yy.nodes[c].path}`)
+                        console.log(c)
                     })
                     process.exit()
                 }
@@ -398,9 +398,9 @@ const yy = {
                     process.exit()
                 }
                 if (names[f.to].length > 1) {
-                    console.log('conflict crafts, use full path:')
+                    console.log(`conflict crafts '${f.to}' , use full path:`)
                     names[f.to].forEach(c => {
-                        console.log(`${yy.nodes[c].path}`)
+                        console.log(c)
                     })
                     process.exit()
                 }

@@ -1,0 +1,19 @@
+// use the same node name in different groups
+group a {
+    service
+    group b {
+        group c {
+            service
+        }
+    }
+}
+
+a-service -> a-b-c-service
+
+// edges bettwen groups
+group c {
+    service
+}
+
+a -> c
+
