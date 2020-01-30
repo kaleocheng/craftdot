@@ -29,9 +29,11 @@ function render_groups(nodesDict, nodesArray) {
 function render_group(group, nodesDict, nodesArray) {
     let crafts_contents = nodesArray.filter(n => n.type == 'craft').filter(c => c.group == group.id).map(craft => render_craft(craft)).join('')
     let groups_contests = group.subgroups.map(subgroup => render_group(nodesDict[subgroup], nodesDict, nodesArray)).join('')
+    let invisNode =  `${group.path.replaceAll('-', '_')}___invis[peripheries=0,height=0,width=0,shape=point];`
     return `
     subgraph cluster_${group.path.replace(/-/g, '_')} {
         label="${group.name}";
+        ${invisNode}
         ${crafts_contents}
         ${groups_contests}
     }
@@ -91,16 +93,24 @@ function render_flows(flows, nodePath2ID, nodes) {
             const nid = nodePath2ID[f.fromPath]
             if (nodes[nid].type == 'group') {
                 fromGroup = nodes[nid].path.replaceAll('-', '_')
-                const index = Math.floor(nodes[nid].crafts.length / 2)
-                fromCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
+                if (nodes[nid].length == 0) {
+                    fromCraft = `${nodes[nid].path.replaceAll('-', '_')}___invis`
+                } else {
+                    const index = Math.floor(nodes[nid].crafts.length / 2)
+                    fromCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
+                }
             }
         }
         if (f.toPath in nodePath2ID) {
             const nid = nodePath2ID[f.toPath]
             if (nodes[nid].type == 'group') {
                 toGroup = nodes[nid].path.replaceAll('-', '_')
-                const index = Math.floor(nodes[nid].crafts.length / 2)
-                toCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
+                if (nodes[nid].length == 0) {
+                    toCraft = `${nodes[nid].path.replaceAll('-', '_')}___invis`
+                } else {
+                    const index = Math.floor(nodes[nid].crafts.length / 2)
+                    toCraft = nodes[nodes[nid].crafts[index]].path.replaceAll('-', '_')
+                }
             }
         }
 
