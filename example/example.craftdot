@@ -33,13 +33,9 @@ group GCE {
 // comment: use * to match all mysql instances
 mysql-* [fillcolor: cornflowerblue, style:filled]
 
-service1 -> service2
-service1 -> service3
-service1 -> hk
-china -> db
+service1 -> service2,service3,hk
+china,service2,service3 -> db
 registry -> builder
-service2 -> db
-service3 -> db
 builder -> service2
 builder -> service3[label: "localhost\:80"]
 

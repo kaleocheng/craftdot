@@ -70,8 +70,8 @@ const grammar = {
             'STRING'
         ],
         'flow': [
-            ['NAME STROKE LARROW NAME', '{$$=yy.newFlow($1, $4); yy.addFlow($$)}'],
-            ['NAME STROKE LARROW NAME OB styleAttrs CB', '{$$=yy.newFlow($1, $4, $6); yy.addFlow($$)}']
+            ['names STROKE LARROW names', '{$$=yy.newFlows($1, $4); yy.addFlows($$)}'],
+            ['names STROKE LARROW names OB styleAttrs CB', '{$$=yy.newFlows($1, $4, $6); yy.addFlows($$)}']
         ],
         'styleAttrs': [
             ['styleAttrs styleAttr', '{$$=yy.appendOrNewArray($$, $2)}'],
@@ -227,6 +227,15 @@ const yy = {
         }
         return flow
     },
+    newFlows: (fromList, toList, styleAttrs) => {
+        const flows = []
+        for ( from of fromList ) {
+            for ( to of toList ) {
+                flows.push(yy.newFlow(from, to, styleAttrs))
+            }
+        }
+        return flows
+    },
     newSAttr: (key, vaule) => {
         return `${key}="${vaule}";`
     },
@@ -271,8 +280,10 @@ const yy = {
             yy.includes[include.path] = include
         }
     },
-    addFlow: (flow) => {
-        yy.flows.push(flow)
+    addFlows: (flows) => {
+        for (flow of flows) {
+            yy.flows.push(flow)
+        }
     },
 
     parseWildcard: () => {
