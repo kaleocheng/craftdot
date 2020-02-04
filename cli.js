@@ -9,9 +9,10 @@ const open = require('open')
 const tmp = require('tmp')
 const pkg = require('./package.json')
 const path = require('path')
-const fastify = require('fastify')({
-  logger: true
-})
+const chokidar = require('chokidar')
+const fastify = require('fastify')()
+const getPort = require('get-port')
+const deasync = require('deasync')
 
 
 commander
@@ -43,10 +44,14 @@ if (!fs.existsSync(craftdotFile)) {
     console.log(`${craftdotFile} is not exist`)
     process.exit()
 }
-const craftdot = fs.readFileSync(craftdotFile, 'utf8')
-const cwd = path.dirname(craftdotFile)
 
-const crafts = parser.parse(craftdot, commander.filter, cwd)
+const parseCrafts = (craftdotFile, filter) => {
+    const craftdot = fs.readFileSync(craftdotFile, 'utf8')
+    const cwd = path.dirname(craftdotFile)
+    return parser.parse(craftdot, filter, cwd)
+}
+
+const crafts = parseCrafts(craftdotFile, commander.filter)
 
 if (commander.debug) {
     console.log(util.inspect(crafts, false, null, true))
@@ -67,29 +72,125 @@ if (commander.format == 'dot') {
 
 
 if (commander.format == 'browser') {
-    // Open with browser
-    let html = `
-    <!DOCTYPE html>
-    <meta charset="utf-8">
+    const defaultPort = 3000
+    const getPortSync = (defaultPort) => {
+        let isDone    = false
+        let freeport  = null
+        let error     = null
 
-    <body>
-        <script src="https://d3js.org/d3.v4.min.js"></script>
-        <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
-        <script src="https://unpkg.com/d3-graphviz@1.4.0/build/d3-graphviz.min.js"></script>
-        <div id="graph" style="text-align: center;"></div>
-        <script>
-            d3.select("#graph").graphviz()
-                .fade(false)
-                .renderDot(\`${output}\`);
-        </script>
-    </body>
-    `
+        getPort({port: defaultPort})
+            .then(port => {
+                isDone   = true
+                freeport = port
+            })
+            .catch(err => {
+                isDone = true
+                error  = err
+            });
+
+        deasync.loopWhile(() => !isDone)
+
+        if (error) {
+            throw  error
+        }
+        else {
+            return freeport
+        }
+    }
+
+    let port = ''
+    try {
+        port = getPortSync(defaultPort)
+    } catch (e) {
+        console.log(`open port faild: ${e}`)
+        process.exit()
+    }
+
+    // Open with browser
+    const html = (renderOutput) => {
+        const result = `
+            <!DOCTYPE html>
+            <meta charset="utf-8">
+
+            <body>
+                <script src="https://d3js.org/d3.v4.min.js"></script>
+                <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
+                <script src="https://unpkg.com/d3-graphviz@1.4.0/build/d3-graphviz.min.js"></script>
+                <div id="graph" style="text-align: center;"></div>
+                <script>
+                    d3.select("#graph").graphviz()
+                            .fade(false)
+                            .renderDot(\`${renderOutput}\`)
+                    const RefreshSocket = class {
+                        constructor (address = \`ws://\${window.location.hostname}:${port}/live-reload\`) {
+                              this.address = address
+                              this.init()
+                        }
+
+                        init () {
+                          let refreshSocket = new WebSocket(this.address, "refresh-protocol")
+                          refreshSocket.addEventListener(
+                            "open",
+                            () => console.log(\`Refresh socket to \${this.address} opened successfully\`))
+
+                          refreshSocket.addEventListener(
+                            "message",
+                            () => {
+                              refreshSocket.close()
+                              window.location.reload(true)
+                            })
+
+                          refreshSocket.addEventListener(
+                            "close",
+                            () => {
+                              console.log(\`Refresh socket to \${this.address} closed\`)
+                              window.setTimeout(() => this.init(), retryTime)
+                            })
+                        }
+                    }
+                    let socket = new RefreshSocket()
+                    </script>
+            </body>
+        `
+        return result
+    }
+
+    let renderdHTML = html(output)
+    const wsConnections = []
+    const handleChange =  (changePath) => {
+        const craftdotChange = path.extname(changePath) === ".craftdot"
+        if (craftdotChange) {
+            console.log('rebuilding...')
+            parser.reset()
+            const crafts = parseCrafts(craftdotFile, commander.filter)
+            renderdHTML = html(render.render_diagraph(crafts))
+            wsConnections.forEach(connection => {
+                connection.socket.send('reload')
+            })
+        }
+    }
+
+    chokidar.watch(craftdotFile)
+        .on('change', handleChange)
+        .on('add', handleChange)
+        .on('unlink', handleChange)
+        .on('addDir', handleChange)
+        .on('unlinkDir', handleChange)
+        .on('error', function (err) {
+            console.log('error:', err)
+        })
+
     fastify.get('/', (request, reply) => {
-        reply.type('text/html').send(html)
+        reply.type('text/html').send(renderdHTML)
     })
 
-    fastify.listen(8333, (err, address) => {
+    fastify.register(require('fastify-websocket'))
+    fastify.get('/live-reload', { websocket: true }, (connection, req) => {
+        wsConnections.push(connection)
+    })
+
+    fastify.listen(port, (err, address) => {
         if (err) throw err
-        fastify.log.info(`server listening on ${address}`)
+        console.log(`server listening on ${address}`)
     })
 }

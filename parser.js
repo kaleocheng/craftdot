@@ -94,6 +94,16 @@ const yy = {
     nodePath2ID: {},
     flows: [],
     cwd: '',
+    reset: () => {
+        yy.fileGroup = 'root'
+        yy.nodes = {}
+        yy.includes = {}
+        yy.parsedFlows = []
+        yy.parsedNodes = []
+        yy.nodePath2ID = {}
+        yy.flows = []
+        yy.cwd = ''
+    },
     appendOrNewArray: (nodes, node) => {
         if (!Array.isArray(nodes)) {
             nodes = []
@@ -470,5 +480,6 @@ const parse = (craftdot, craftFilter, cwd, group) => {
 }
 
 module.exports = {
-    parse
+    parse,
+    reset: yy.reset
 }
