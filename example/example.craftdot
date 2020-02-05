@@ -1,42 +1,4 @@
-service1
-
-group AWS {
-    service2 {
-        hosts:
-            - 172.16.1.4
-            - 172.16.1.5
-        domain: "https://example.com"
-    }
-
-    builder
-
-    group db {
-        include { "example-db.craftdot"  }
-    }
-}
-
-group GCE {
-    service3 {
-        hosts:
-            - 172.16.1.4
-            - 172.16.1.5
-    }
-    group china {
-         group hk {
-             service7
-         }
-    }
-    registry[fillcolor: skyblue, style:filled]
-
-}
-
-// comment: use * to match all mysql instances
-mysql-* [fillcolor: cornflowerblue, style:filled]
-
-service1 -> service2,service3,hk
-china,service2,service3 -> db
-registry -> builder
-builder -> service2
-builder -> service3[label: "localhost\:80"]
-
-* -> mysql* [color: red]
+// include from files
+include {"node.craftdot"}
+include {"group.craftdot"}
+include {"edge.craftdot"}

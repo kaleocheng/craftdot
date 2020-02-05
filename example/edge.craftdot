@@ -1,0 +1,18 @@
+// single edge
+// service1, service2 can be both node or group
+service1 -> service2
+
+// mutiple edge in one line
+service2 -> db-mysql,db-redis
+service1,service3 -> db-mysql
+
+// edge with label
+service4 -> service2 [label: "push"]
+
+
+// edge with style
+service4 -> devops-platform [fillcolor: skyblue, style:filled]
+
+// define style with wildcrads *
+* -> db-* [color: red]
+

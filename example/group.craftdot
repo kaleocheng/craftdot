@@ -1,21 +1,17 @@
-// use the same node name in different groups
-group a {
-    service
-    group b {
-        group c {
-            service
-        }
+// group with nodes
+group service4 {
+    instance1
+    instance2
+}
+
+// nest groups
+group devops-platform {
+    group monitoring {
+        grafana
+        influxdb
+    }
+    group logs {
+        elasticsearch
+        kibana
     }
 }
-
-
-a.service -> a.b.c.service
-
-// edges bettwen groups
-group c {
-    service
-}
-
-
-a -> c
-

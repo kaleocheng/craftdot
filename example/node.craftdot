@@ -1,0 +1,26 @@
+// single node
+db-mysql
+db-redis
+
+// node with attributes
+service1[fillcolor: skyblue, style:filled]
+
+// node with details
+service2 {
+    hosts:
+        - 172.16.1.4
+        - 172.16.1.5
+    domain: "https://service2.localdomain"
+}
+
+// node with both attributes and details
+service3 [
+    fillcolor: cornflowerblue,
+    style:filled
+    ] {
+    domain: "https://service3.localdomain"
+}
+
+// define style with wildcrads *
+db-* [fillcolor: red, style:filled]
+
