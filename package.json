@@ -25,16 +25,31 @@
     "dependencies": {
         "chokidar": "^3.3.1",
         "commander": "^2.20.0",
-        "d3": "^4.13.0",
-        "d3-graphviz": "^1.4.0",
         "fastify": "^2.8.0",
         "fastify-static": "^2.6.0",
         "fastify-websocket": "^1.1.0",
         "get-port": "^5.1.1",
         "jison": "^0.4.18",
-        "mustache": "^3.0.1",
-        "open": "^6.3.0",
-        "tmp": "^0.1.0",
+        "mustache": "^3.0.1"
+    },
+    "devDependencies": {
+        "copy-files-from-to": "^2.1.0",
+        "d3": "^4.13.0",
+        "d3-graphviz": "^1.4.0",
         "viz.js": "^1.8.0"
-    }
+    },
+    "copyFiles": [
+        {
+            "from": "node_modules/d3/build/d3.min.js",
+            "to": "dist/d3.min.js"
+        },
+        {
+            "from": "node_modules/viz.js/viz.js",
+            "to": "dist/viz.js"
+        },
+        {
+            "from": "node_modules/d3-graphviz/build/d3-graphviz.min.js",
+            "to": "dist/d3-graphviz.min.js"
+        }
+    ]
 }
