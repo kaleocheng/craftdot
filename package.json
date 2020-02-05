@@ -25,13 +25,17 @@
     "dependencies": {
         "chokidar": "^3.3.1",
         "commander": "^2.20.0",
+        "d3": "^4.13.0",
+        "d3-graphviz": "^1.4.0",
         "deasync": "^0.1.19",
         "fastify": "^2.8.0",
+        "fastify-static": "^2.6.0",
         "fastify-websocket": "^1.1.0",
         "get-port": "^5.1.1",
         "jison": "^0.4.18",
         "mustache": "^3.0.1",
         "open": "^6.3.0",
-        "tmp": "^0.1.0"
+        "tmp": "^0.1.0",
+        "viz.js": "^1.8.0"
     }
 }

@@ -113,9 +113,9 @@ if (commander.format == 'browser') {
             <meta charset="utf-8">
 
             <body>
-                <script src="https://d3js.org/d3.v4.min.js"></script>
-                <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
-                <script src="https://unpkg.com/d3-graphviz@1.4.0/build/d3-graphviz.min.js"></script>
+                <script src="http://127.0.0.1:${port}/dist/d3/d3.min.js"></script>
+                <script src="http://127.0.0.1:${port}/dist/viz.js/viz.js" type="javascript/worker"></script>
+                <script src="http://127.0.0.1:${port}/dist/d3-graphviz/d3-graphviz.min.js"></script>
                 <div id="graph" style="text-align: center;"></div>
                 <script>
                     d3.select("#graph").graphviz()
@@ -179,6 +179,30 @@ if (commander.format == 'browser') {
         .on('error', function (err) {
             console.log('error:', err)
         })
+
+    fastify.register((instance, opts, next) => {
+      instance.register(require('fastify-static'), {
+          root: path.join(__dirname, 'node_modules/d3/build/', ),
+          prefix: '/dist/d3/',
+      })
+      next()
+    })
+
+    fastify.register((instance, opts, next) => {
+      instance.register(require('fastify-static'), {
+          root: path.join(__dirname, 'node_modules/viz.js', ),
+          prefix: '/dist/viz.js/',
+      })
+      next()
+    })
+
+    fastify.register((instance, opts, next) => {
+      instance.register(require('fastify-static'), {
+          root: path.join(__dirname, 'node_modules/d3-graphviz/build/', ),
+          prefix: '/dist/d3-graphviz/',
+      })
+      next()
+    })
 
     fastify.get('/', (request, reply) => {
         reply.type('text/html').send(renderdHTML)
