@@ -1,6 +1,7 @@
 .*
 *~
 !.gitignore
+!.gitkeep
 !.gitattributes
 node_modules/
 *.swp
