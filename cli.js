@@ -17,6 +17,7 @@ const getPort = require('get-port')
 commander
     .name('craftdot')
     .version(pkg.version)
+    .option('--port [3200]', 'the server prot, only vaild when  --format=browser (default is 3200)')
     .option('--filter [*]', 'filter crafts, support wildcard such as service* (default is *)')
     .option('--format [type]', 'output raw data with format, support [dot, json, browser], (default is open with  browser', 'browser')
     .option('--debug', 'print parsed object for debug')
@@ -72,7 +73,7 @@ if (commander.format == 'dot') {
 
 if (commander.format == 'browser') {
     (async () => {
-        const defaultPort = 3200
+        const defaultPort = commander.port ? Number(commander.port) : 3200
         const port = await getPort({host: '127.0.0.1', port: defaultPort})
         const html = (renderOutput) => {
             const result = `
