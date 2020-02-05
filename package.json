@@ -27,7 +27,6 @@
         "commander": "^2.20.0",
         "d3": "^4.13.0",
         "d3-graphviz": "^1.4.0",
-        "deasync": "^0.1.19",
         "fastify": "^2.8.0",
         "fastify-static": "^2.6.0",
         "fastify-websocket": "^1.1.0",

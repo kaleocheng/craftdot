@@ -12,7 +12,6 @@ const path = require('path')
 const chokidar = require('chokidar')
 const fastify = require('fastify')()
 const getPort = require('get-port')
-const deasync = require('deasync')
 
 
 commander
@@ -72,149 +71,118 @@ if (commander.format == 'dot') {
 
 
 if (commander.format == 'browser') {
-    const defaultPort = 3000
-    const getPortSync = (defaultPort) => {
-        let isDone    = false
-        let freeport  = null
-        let error     = null
+    (async () => {
+        const defaultPort = 3200
+        const port = await getPort({host: '127.0.0.1', port: defaultPort})
+        const html = (renderOutput) => {
+            const result = `
+                <!DOCTYPE html>
+                <meta charset="utf-8">
 
-        getPort({port: defaultPort})
-            .then(port => {
-                isDone   = true
-                freeport = port
-            })
-            .catch(err => {
-                isDone = true
-                error  = err
-            });
+                <body>
+                    <script src="http://127.0.0.1:${port}/dist/d3/d3.min.js"></script>
+                    <script src="http://127.0.0.1:${port}/dist/viz.js/viz.js" type="javascript/worker"></script>
+                    <script src="http://127.0.0.1:${port}/dist/d3-graphviz/d3-graphviz.min.js"></script>
+                    <div id="graph" style="text-align: center;"></div>
+                    <script>
+                        d3.select("#graph").graphviz()
+                                .fade(false)
+                                .renderDot(\`${renderOutput}\`)
+                        const RefreshSocket = class {
+                            constructor (address = \`ws://\${window.location.hostname}:${port}/live-reload\`) {
+                                  this.address = address
+                                  this.init()
+                            }
 
-        deasync.loopWhile(() => !isDone)
+                            init () {
+                              let refreshSocket = new WebSocket(this.address, "refresh-protocol")
+                              refreshSocket.addEventListener(
+                                "open",
+                                () => console.log(\`Refresh socket to \${this.address} opened successfully\`))
 
-        if (error) {
-            throw  error
-        }
-        else {
-            return freeport
-        }
-    }
+                              refreshSocket.addEventListener(
+                                "message",
+                                () => {
+                                  refreshSocket.close()
+                                  window.location.reload(true)
+                                })
 
-    let port = ''
-    try {
-        port = getPortSync(defaultPort)
-    } catch (e) {
-        console.log(`open port faild: ${e}`)
-        process.exit()
-    }
-
-    // Open with browser
-    const html = (renderOutput) => {
-        const result = `
-            <!DOCTYPE html>
-            <meta charset="utf-8">
-
-            <body>
-                <script src="http://127.0.0.1:${port}/dist/d3/d3.min.js"></script>
-                <script src="http://127.0.0.1:${port}/dist/viz.js/viz.js" type="javascript/worker"></script>
-                <script src="http://127.0.0.1:${port}/dist/d3-graphviz/d3-graphviz.min.js"></script>
-                <div id="graph" style="text-align: center;"></div>
-                <script>
-                    d3.select("#graph").graphviz()
-                            .fade(false)
-                            .renderDot(\`${renderOutput}\`)
-                    const RefreshSocket = class {
-                        constructor (address = \`ws://\${window.location.hostname}:${port}/live-reload\`) {
-                              this.address = address
-                              this.init()
+                              refreshSocket.addEventListener(
+                                "close",
+                                () => {
+                                  console.log(\`Refresh socket to \${this.address} closed\`)
+                                  window.setTimeout(() => this.init(), retryTime)
+                                })
+                            }
                         }
-
-                        init () {
-                          let refreshSocket = new WebSocket(this.address, "refresh-protocol")
-                          refreshSocket.addEventListener(
-                            "open",
-                            () => console.log(\`Refresh socket to \${this.address} opened successfully\`))
-
-                          refreshSocket.addEventListener(
-                            "message",
-                            () => {
-                              refreshSocket.close()
-                              window.location.reload(true)
-                            })
-
-                          refreshSocket.addEventListener(
-                            "close",
-                            () => {
-                              console.log(\`Refresh socket to \${this.address} closed\`)
-                              window.setTimeout(() => this.init(), retryTime)
-                            })
-                        }
-                    }
-                    let socket = new RefreshSocket()
-                    </script>
-            </body>
-        `
-        return result
-    }
-
-    let renderdHTML = html(output)
-    const wsConnections = []
-    const handleChange =  (changePath) => {
-        const craftdotChange = path.extname(changePath) === ".craftdot"
-        if (craftdotChange) {
-            console.log('rebuilding...')
-            parser.reset()
-            const crafts = parseCrafts(craftdotFile, commander.filter)
-            renderdHTML = html(render.render_diagraph(crafts))
-            wsConnections.forEach(connection => {
-                connection.socket.send('reload')
-            })
+                        let socket = new RefreshSocket()
+                        </script>
+                </body>
+            `
+            return result
         }
-    }
 
-    chokidar.watch(craftdotFile)
-        .on('change', handleChange)
-        .on('add', handleChange)
-        .on('unlink', handleChange)
-        .on('addDir', handleChange)
-        .on('unlinkDir', handleChange)
-        .on('error', function (err) {
-            console.log('error:', err)
+        let renderdHTML = html(output)
+        const wsConnections = []
+        const handleChange =  (changePath) => {
+            const craftdotChange = path.extname(changePath) === ".craftdot"
+            if (craftdotChange) {
+                console.log('rebuilding...')
+                parser.reset()
+                const crafts = parseCrafts(craftdotFile, commander.filter)
+                renderdHTML = html(render.render_diagraph(crafts))
+                wsConnections.forEach(connection => {
+                    connection.socket.send('reload')
+                })
+            }
+        }
+
+        chokidar.watch(craftdotFile)
+            .on('change', handleChange)
+            .on('add', handleChange)
+            .on('unlink', handleChange)
+            .on('addDir', handleChange)
+            .on('unlinkDir', handleChange)
+            .on('error', function (err) {
+                console.log('error:', err)
+            })
+
+        fastify.register((instance, opts, next) => {
+          instance.register(require('fastify-static'), {
+              root: path.join(__dirname, 'node_modules/d3/build/', ),
+              prefix: '/dist/d3/',
+          })
+          next()
         })
 
-    fastify.register((instance, opts, next) => {
-      instance.register(require('fastify-static'), {
-          root: path.join(__dirname, 'node_modules/d3/build/', ),
-          prefix: '/dist/d3/',
-      })
-      next()
-    })
+        fastify.register((instance, opts, next) => {
+          instance.register(require('fastify-static'), {
+              root: path.join(__dirname, 'node_modules/viz.js', ),
+              prefix: '/dist/viz.js/',
+          })
+          next()
+        })
 
-    fastify.register((instance, opts, next) => {
-      instance.register(require('fastify-static'), {
-          root: path.join(__dirname, 'node_modules/viz.js', ),
-          prefix: '/dist/viz.js/',
-      })
-      next()
-    })
+        fastify.register((instance, opts, next) => {
+          instance.register(require('fastify-static'), {
+              root: path.join(__dirname, 'node_modules/d3-graphviz/build/', ),
+              prefix: '/dist/d3-graphviz/',
+          })
+          next()
+        })
 
-    fastify.register((instance, opts, next) => {
-      instance.register(require('fastify-static'), {
-          root: path.join(__dirname, 'node_modules/d3-graphviz/build/', ),
-          prefix: '/dist/d3-graphviz/',
-      })
-      next()
-    })
+        fastify.get('/', (request, reply) => {
+            reply.type('text/html').send(renderdHTML)
+        })
 
-    fastify.get('/', (request, reply) => {
-        reply.type('text/html').send(renderdHTML)
-    })
+        fastify.register(require('fastify-websocket'))
+        fastify.get('/live-reload', { websocket: true }, (connection, req) => {
+            wsConnections.push(connection)
+        })
 
-    fastify.register(require('fastify-websocket'))
-    fastify.get('/live-reload', { websocket: true }, (connection, req) => {
-        wsConnections.push(connection)
-    })
-
-    fastify.listen(port, (err, address) => {
-        if (err) throw err
-        console.log(`server listening on ${address}`)
-    })
+        fastify.listen(port, (err, address) => {
+            if (err) throw err
+            console.log(`server listening on ${address}`)
+        })
+    })()
 }
