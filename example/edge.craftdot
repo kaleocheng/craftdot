@@ -6,6 +6,11 @@ service1 -> service2
 service2 -> db-mysql,db-redis
 service1,service3 -> db-mysql
 
+// edge pipe
+service1 -> service3
+         -> service2
+         -> devops-platform
+
 // edge with label
 service4 -> service2 [label: "push"]
 

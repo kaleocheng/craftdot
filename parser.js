@@ -45,7 +45,7 @@ const grammar = {
             ['names OB styleAttrs CB OP attrs CP', '{$$=yy.newCrafts($1, $6, $3); yy.addCrafts($$)}'],
             ['names OB styleAttrs CB', '{$$=yy.newCrafts($1, "", $3); yy.addCrafts($$)}'],
             ['INCLUDE OP ITEM CP', '{{$$=yy.newInclude($3); yy.addInclude($$)}}'],
-            'flow'
+            'flows'
         ],
         'names': [
             ['names COMMA name', '{$$=yy.appendOrNewArray($$, $3)}'],
@@ -69,9 +69,13 @@ const grammar = {
             'NAME',
             'STRING'
         ],
+        'flows': [
+            ['flows STROKE LARROW names', '{$$=yy.appendToFlows($1, $4); yy.addFlows($$)}'],
+            ['flow', '{yy.addFlows($$)}']
+        ],
         'flow': [
-            ['names STROKE LARROW names', '{$$=yy.newFlows($1, $4); yy.addFlows($$)}'],
-            ['names STROKE LARROW names OB styleAttrs CB', '{$$=yy.newFlows($1, $4, $6); yy.addFlows($$)}']
+            ['names STROKE LARROW names', '{$$=yy.newFlows($1, $4)}'],
+            ['names STROKE LARROW names OB styleAttrs CB', '{$$=yy.newFlows($1, $4, $6)}']
         ],
         'styleAttrs': [
             ['styleAttrs styleAttr', '{$$=yy.appendOrNewArray($$, $2)}'],
@@ -114,6 +118,24 @@ const yy = {
             nodes.push(node)
         }
         return nodes
+    },
+    appendToFlows: (flows, names) => {
+        let newFlows = []
+        let tailFlows = flows.filter(x => x['tail'] == true)
+        if (tailFlows.length == 0) {
+            tailFlows = flows
+        }
+        tailFlows.forEach(flow => {flow['tail'] = false})
+        let fromList  = Array.from(new Set(tailFlows.map(flow => flow.to)))
+
+        for (from of fromList){
+            for (name of names) {
+               let newFlow = yy.newFlow(from, name)
+               newFlow['tail'] = true
+               newFlows.push(newFlow)
+            }
+        }
+        return newFlows
     },
     newGroup: (name, childs) => {
         const g = {
